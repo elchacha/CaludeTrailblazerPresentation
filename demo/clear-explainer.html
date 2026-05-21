@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — /clear</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/clear-explainer.css">
+</head>
+<body>
+
+<h1>🗑 /clear</h1>
+<p class="subtitle">Efface intégralement le contexte — aucun résumé, aucune mémoire conservée</p>
+
+<div class="layout">
+
+  <!-- ══ GAUCHE — conversation chargée ══ -->
+  <div class="panel">
+    <div class="panel-header before">
+      <span class="dot blue"></span>
+      Contexte avant /clear
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill" id="before-fill" style="background:var(--danger); width:81%"></div></div>
+      <span class="ctx-tokens" id="before-tokens" style="color:var(--danger)">~81 000 tok</span>
+    </div>
+    <div class="messages" id="before-messages">
+      <div class="msg user">
+        <div class="msg-role">Vous — message 1</div>
+        Rédige le chapitre 1 — Elise reçoit la lettre de résiliation du bail.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 2</div>
+        Je crée <code>chapitre-1.md</code> et développe la scène d'ouverture.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit + Write</div>
+        Write › <code>chapitre-1.md</code> &nbsp;|&nbsp; Edit › <code>nouvelle.md</code>
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 4</div>
+        Développe le personnage de Victor dans ce chapitre.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 5</div>
+        J'enrichis Victor : 40 ans de présence, ses habitudes, son lien affectif avec la librairie.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit</div>
+        Edit › <code>chapitre-1.md</code> — 160 lignes modifiées
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 7</div>
+        La scène de la lettre recommandée semble trop froide, enrichis-la.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 8</div>
+        Scène enrichie : l'atmosphère de la librairie ajoutée, la réaction d'Elise développée.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit</div>
+        Edit › <code>chapitre-1.md</code> — scène retravaillée, atmosphère ajoutée
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 10</div>
+        Maintenant rédige le chapitre 2 — point de vue de Tom Berger.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CENTRE ══ -->
+  <div class="center-col">
+    <button class="clear-btn" id="clear-btn" onclick="doClear()">🗑 /clear</button>
+    <span class="center-label" id="center-label">tout effacer</span>
+  </div>
+
+  <!-- ══ DROITE — contexte vide ══ -->
+  <div class="panel">
+    <div class="panel-header after">
+      <span class="dot red"></span>
+      Contexte après /clear
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill" id="after-fill" style="background:var(--danger); width:0%"></div></div>
+      <span class="ctx-tokens" id="after-tokens" style="color:var(--text-muted)">— en attente —</span>
+    </div>
+    <div class="messages" id="after-messages" style="justify-content:center;">
+      <div class="zero-state" id="zero-state">
+        <div class="zero-icon">🗑</div>
+        <div class="zero-token-display">0 tok</div>
+        <div class="zero-title">Conversation effacée</div>
+        <div class="zero-subtitle">
+          Aucun message, aucun résumé, aucune trace de la conversation précédente.
+        </div>
+        <div class="claudemd-reload" id="claudemd-reload">
+          <div class="rl-title">↩ Rechargé automatiquement</div>
+          <code>CLAUDE.md</code> est réinjecté immédiatement dans le nouveau contexte.<br>
+          Le projet, les conventions et les instructions persistent — Claude ne repart pas vraiment de zéro.<br><br>
+          <span style="color:var(--text-muted)">Nouveau contexte réel : <strong style="color:var(--green)">~4 500 tok</strong> (system prompt + CLAUDE.md)</span>
+        </div>
+        <div class="files-note">
+          <strong>⚠ Fichiers disque non affectés</strong><br>
+          <code>chapitre-1.md</code>, <code>nouvelle.md</code> existent toujours.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Comparison compact vs clear -->
+<div class="comparison">
+  <div class="cmp-card">
+    <div class="cmp-title gold">⚡ /compact — ce qui reste</div>
+    <div class="cmp-row"><span class="icon">✅</span><span><strong>Résumé de session</strong> — l'essentiel de l'historique est condensé</span></div>
+    <div class="cmp-row"><span class="icon">✅</span><span><strong>Décisions & bugs</strong> — conservés dans le résumé</span></div>
+    <div class="cmp-row"><span class="icon">✅</span><span><strong>Contexte réduit</strong> — ~10-15 000 tok au lieu de 80 000</span></div>
+    <div class="cmp-row"><span class="icon">⚠</span><span><strong>Fichiers disque</strong> — inchangés</span></div>
+  </div>
+  <div class="cmp-card">
+    <div class="cmp-title red">🗑 /clear — ce qui reste</div>
+    <div class="cmp-row"><span class="icon">❌</span><span><strong>Aucun résumé</strong> — l'historique est intégralement supprimé</span></div>
+    <div class="cmp-row"><span class="icon">❌</span><span><strong>Décisions & bugs</strong> — perdus, Claude ne sait plus rien</span></div>
+    <div class="cmp-row"><span class="icon">✅</span><span><strong>~4 500 tok</strong> — CLAUDE.md rechargé auto, conversation vide</span></div>
+    <div class="cmp-row"><span class="icon">⚠</span><span><strong>Fichiers disque</strong> — inchangés</span></div>
+  </div>
+</div>
+
+<script>
+  let cleared = false;
+
+  function doClear() {
+    if (cleared) return;
+    cleared = true;
+    document.getElementById('clear-btn').disabled = true;
+    document.getElementById('center-label').textContent = 'effacement…';
+
+    // Erase messages one by one
+    const msgs = document.querySelectorAll('#before-messages .msg');
+    msgs.forEach((m, i) => {
+      setTimeout(() => m.classList.add('erasing'), i * 80);
+    });
+
+    // Drain context bar on left
+    setTimeout(() => {
+      document.getElementById('before-fill').style.width = '0%';
+      document.getElementById('before-fill').style.background = 'var(--surface2)';
+      document.getElementById('before-tokens').textContent = '0 tok';
+      document.getElementById('before-tokens').style.color = 'var(--text-muted)';
+    }, msgs.length * 80 + 200);
+
+    // Show right panel result
+    setTimeout(() => {
+      document.getElementById('after-fill').style.width = '0%';
+      document.getElementById('after-tokens').textContent = '0 tok';
+      document.getElementById('after-tokens').style.color = 'var(--danger)';
+      document.getElementById('zero-state').classList.add('show');
+      document.getElementById('center-label').textContent = '✓ effacé';
+
+      // After brief pause, show CLAUDE.md reload
+      setTimeout(() => {
+        document.getElementById('claudemd-reload').classList.add('show');
+        document.getElementById('after-fill').style.width = '5%';
+        document.getElementById('after-fill').style.background = 'var(--green)';
+        document.getElementById('after-tokens').textContent = '~4 500 tok';
+        document.getElementById('after-tokens').style.color = 'var(--green)';
+      }, 1200);
+    }, msgs.length * 80 + 500);
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+    
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --orange: #f7a300;
+    --blue: #58a6ff;
+    --green: #3fb950;
+    --danger: #da3633;
+    --purple: #bc8cff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 4px;
+    color: var(--orange);
+    letter-spacing: 0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .badge-skill {
+    display: block;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .badge-skill span {
+    background: #0a1a0a;
+    border: 1px solid #2d6a2d;
+    color: #3fb950;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── Context bar ── */
+  .context-section {
+    max-width: 900px;
+    margin: 0 auto 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .context-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .context-label { color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .context-tokens { color: var(--green); font-weight: 700; font-size: 13px; transition: color 0.4s; }
+
+  .context-track {
+    height: 10px;
+    background: var(--surface2);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+  }
+  .context-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.7s ease;
+    background: var(--green);
+  }
+
+  .context-log {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .log-entry {
+    font-size: 11px;
+    font-family: 'Consolas', monospace;
+    color: var(--text-muted);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.4s, transform 0.4s;
+    padding: 2px 0;
+    border-left: 2px solid var(--border);
+    padding-left: 8px;
+  }
+  .log-entry.visible { opacity: 1; transform: translateY(0); }
+  .log-entry .tok { color: var(--green); font-weight: 700; }
+  .log-entry .action { color: var(--orange); }
+
+  /* ── Main layout ── */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── Left panel ── */
+  .left-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: sticky;
+    top: 24px;
+  }
+  .left-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .create-btn {
+    background: var(--orange);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s, transform 0.15s, opacity 0.3s;
+    letter-spacing: 0.3px;
+  }
+  .create-btn:hover:not(:disabled) { background: #ffb832; transform: scale(1.03); }
+  .create-btn:active:not(:disabled) { transform: scale(0.97); }
+  .create-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .click-counter {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .click-counter span { color: var(--text); font-weight: 700; }
+
+  .skill-note {
+    font-size: 10px;
+    color: var(--green);
+    line-height: 1.5;
+    background: #0a1a0a;
+    border: 1px solid #1a4a1a;
+    border-radius: 6px;
+    padding: 8px;
+  }
+
+  /* ── Right panel ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 200px;
+  }
+
+  .empty-state {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ── Card wrap animation ── */
+  .card-wrap {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .card-wrap.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Skill card — design IDENTIQUE pour les 3 ── */
+  .skill-card {
+    background: var(--surface);
+    border: 1px solid #5a3a00;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .skill-card .card-header {
+    background: #1a1000;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #3a2500;
+  }
+  .skill-card .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .skill-card .skill-tag {
+    font-size: 9px;
+    background: #2a1800;
+    border: 1px solid #5a3a00;
+    color: var(--orange);
+    border-radius: 10px;
+    padding: 2px 7px;
+    letter-spacing: 0.5px;
+  }
+  .skill-card .card-body {
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .skill-card .field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .skill-card .field-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .skill-card .field-label .icon { font-size: 11px; }
+  .skill-card .field-value {
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface2);
+    border-radius: 5px;
+    padding: 5px 8px;
+  }
+  .skill-card .field.full { grid-column: 1 / -1; }
+
+  .card-number {
+    font-size: 10px;
+    color: var(--green);
+    text-align: right;
+    margin-top: 6px;
+    font-style: italic;
+  }

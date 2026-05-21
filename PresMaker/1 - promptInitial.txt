@@ -1,0 +1,14 @@
+je voudrais faire un process simple pour le moment en skill / agent qui me permette de passer rapidement d'une idée à un présentation propre.
+
+Step 1: je vais proposer mon idée sans trop la détailler et tu devrais me faire un plan en x parties , je passerais le nombre de partie dans le skill et tu passes en mode interactif pour me demander ce que je veux faire. tu me fournis un .md. Appelles le skill planInit. 
+
+
+step 2: je modifie ta proposition, je peux ajouter des @xxxx@. la partie @xxx@ est une instruction pour etoffer la presentation, tu dois la gérer
+
+step 3 : je lance un skill planDraft : tu dois reprendre le md , le relire , prendre en compte mes instruction @xxxxx@ et tu commences à faire un version plus étoffée qui va etre découpable en slides. tu peux créer autant de slides que nécessaire mais le skill prend un paramétre max. si présent , tu me fais pas plus de slide que max. Tu pourrais découper les md en faisant un md par slide ?
+
+step 4:  je relis les md, je peux encore modifier le texte ou ajouter des instructions @xxxx@ et j'appelle un skill nommé planPresent. Tu dois alors construire la présentation avec un effet whaoo pour mon public , tu peux faire de belles animations , tu peux faire de l'humour. tu génères un md final et tu fais une présentation html en reveal 
+
+
+############### Ajout possible #################
+Tu peux utiliser python dans les skills si tu penses que ce sera plus efficace

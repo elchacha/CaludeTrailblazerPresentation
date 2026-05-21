@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Architecture</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --blue: #58a6ff;
+    --green: #3fb950;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { text-align: center; font-size: 22px; margin-bottom: 4px; color: var(--blue); letter-spacing: 0.5px; }
+  .subtitle { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+  .diagram-wrap { width: 100%; max-width: 1080px; }
+  svg { width: 100%; height: auto; }
+
+  .node { cursor: pointer; }
+  .node:hover rect, .node:hover .box-bg { opacity: 0.9; }
+  .node.active rect, .node.active .box-bg { filter: brightness(1.25); }
+
+  .info-panel {
+    margin-top: 18px;
+    width: 100%;
+    max-width: 1080px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    min-height: 80px;
+  }
+  .info-placeholder { color: var(--text-muted); font-size: 13px; font-style: italic; }
+  .info-title { font-size: 15px; font-weight: 600; color: var(--blue); margin-bottom: 6px; }
+  .info-body { font-size: 13px; line-height: 1.6; margin-bottom: 8px; }
+  .info-example {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: monospace;
+    background: var(--surface2);
+    border-radius: 4px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--border);
+    white-space: pre;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏗️ Architecture Claude Code</h1>
+<p class="subtitle">Comment le CLI, le LLM et les composants locaux s'articulent — cliquer sur un composant pour les détails</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 1060 615" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', system-ui, sans-serif">
+<defs>
+  <marker id="arr-gray"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#7d8590"/></marker>
+  <marker id="arr-blue"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#58a6ff"/></marker>
+  <marker id="arr-green"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#3fb950"/></marker>
+  <marker id="arr-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#f7a300"/></marker>
+  <marker id="arr-red"    viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#f85149"/></marker>
+  <marker id="arr-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#bc8cff"/></marker>
+</defs>
+
+<!-- ═══ ZONES ═══ -->
+<rect x="5" y="5" width="740" height="605" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="22" y="28" fill="#7d8590" font-size="12">💻  Machine locale</text>
+
+<rect x="755" y="5" width="300" height="605" rx="12" fill="#0d1623" stroke="#1f6feb" stroke-width="1.5" stroke-dasharray="6 3"/>
+<text x="772" y="28" fill="#58a6ff" font-size="12">☁️  Cloud Anthropic</text>
+
+<!-- ═══ SOURCE FILES (ligne du haut) ═══ -->
+
+<!-- CLAUDE.md -->
+<g class="node" id="node-claudemd" onclick="showInfo('claudemd')">
+  <rect x="20" y="45" width="150" height="68" rx="8" fill="#1a1033" stroke="#7c3aed" stroke-width="2"/>
+  <text x="95" y="70" text-anchor="middle" fill="#c4b5fd" font-size="13" font-weight="600">📄 CLAUDE.md</text>
+  <text x="95" y="89" text-anchor="middle" fill="#7d8590" font-size="11">instructions</text>
+  <text x="95" y="104" text-anchor="middle" fill="#7d8590" font-size="11">projet</text>
+</g>
+
+<!-- memory/ -->
+<g class="node" id="node-memory" onclick="showInfo('memory')">
+  <rect x="185" y="45" width="150" height="68" rx="8" fill="#1c1a0a" stroke="#e3b341" stroke-width="2"/>
+  <text x="260" y="70" text-anchor="middle" fill="#e3b341" font-size="13" font-weight="600">🧠 memory/</text>
+  <text x="260" y="89" text-anchor="middle" fill="#7d8590" font-size="11">persistance</text>
+  <text x="260" y="104" text-anchor="middle" fill="#7d8590" font-size="11">inter-sessions</text>
+</g>
+
+<!-- skills/ -->
+<g class="node" id="node-skills" onclick="showInfo('skills')">
+  <rect x="350" y="45" width="150" height="68" rx="8" fill="#091b1c" stroke="#39d0d8" stroke-width="2"/>
+  <text x="425" y="70" text-anchor="middle" fill="#39d0d8" font-size="13" font-weight="600">⚡ skills/</text>
+  <text x="425" y="89" text-anchor="middle" fill="#7d8590" font-size="11">compétences</text>
+  <text x="425" y="104" text-anchor="middle" fill="#7d8590" font-size="11">/slash commands</text>
+</g>
+
+<!-- settings.json -->
+<g class="node" id="node-settings" onclick="showInfo('settings')">
+  <rect x="515" y="45" width="215" height="68" rx="8" fill="#1c1400" stroke="#f7a300" stroke-width="2"/>
+  <text x="622" y="68" text-anchor="middle" fill="#f7a300" font-size="13" font-weight="600">⚙️ settings.json</text>
+  <text x="622" y="87" text-anchor="middle" fill="#7d8590" font-size="11">permissions · hooks</text>
+  <text x="622" y="104" text-anchor="middle" fill="#7d8590" font-size="11">MCP servers config</text>
+</g>
+
+<!-- ═══ FLÈCHES sources → CLI ═══ -->
+<line x1="95"  y1="113" x2="178" y2="178" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr-gray)" opacity="0.8"/>
+<line x1="260" y1="113" x2="260" y2="178" stroke="#e3b341" stroke-width="1.5" marker-end="url(#arr-gray)" opacity="0.8"/>
+<line x1="425" y1="113" x2="358" y2="178" stroke="#39d0d8" stroke-width="1.5" marker-end="url(#arr-gray)" opacity="0.8"/>
+<line x1="622" y1="113" x2="528" y2="178" stroke="#f7a300" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-orange)" opacity="0.8"/>
+
+<text x="104"  y="150" fill="#7d8590" font-size="10" opacity="0.75">inject</text>
+<text x="265"  y="150" fill="#7d8590" font-size="10" opacity="0.75">inject</text>
+<text x="350"  y="150" fill="#7d8590" font-size="10" opacity="0.75">inject</text>
+<text x="558"  y="150" fill="#f7a300" font-size="10" opacity="0.75">configure</text>
+
+<!-- ═══ CLI ═══ -->
+<g class="node" id="node-cli" onclick="showInfo('cli')">
+  <rect x="90" y="178" width="530" height="155" rx="10" fill="#0d2044" stroke="#1f6feb" stroke-width="2.5"/>
+  <text x="355" y="208" text-anchor="middle" fill="#58a6ff" font-size="16" font-weight="700">⚙️  CLI  Node.js</text>
+  <line x1="110" y1="218" x2="600" y2="218" stroke="#1f4080" stroke-width="1"/>
+  <text x="355" y="238" text-anchor="middle" fill="#e6edf3" font-size="12">1.  Lit les sources → assemble le contexte  (system prompt + tools defs)</text>
+  <text x="355" y="258" text-anchor="middle" fill="#e6edf3" font-size="12">2.  Envoie le contexte à l'API Anthropic  (HTTPS)</text>
+  <text x="355" y="278" text-anchor="middle" fill="#e6edf3" font-size="12">3.  Reçoit la réponse LLM → si tool_use : exécute localement</text>
+  <text x="355" y="298" text-anchor="middle" fill="#e6edf3" font-size="12">4.  Renvoie tool_result → boucle jusqu'à réponse finale</text>
+  <text x="355" y="320" text-anchor="middle" fill="#7d8590" font-size="11">→ S'exécute avec tes droits utilisateur (pas de sandbox sauf permission mode)</text>
+</g>
+
+<!-- CLI → Context -->
+<line x1="355" y1="333" x2="355" y2="393" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr-gray)" opacity="0.9"/>
+<text x="362" y="368" fill="#7d8590" font-size="10">assemble</text>
+
+<!-- CLI → bas (outils) -->
+<line x1="138" y1="333" x2="97"  y2="513" stroke="#3d444d" stroke-width="1.5" marker-end="url(#arr-gray)" opacity="0.7"/>
+<line x1="298" y1="333" x2="323" y2="513" stroke="#f85149" stroke-width="1.5" marker-end="url(#arr-red)"  opacity="0.7"/>
+<line x1="525" y1="333" x2="615" y2="513" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arr-purple)" opacity="0.7"/>
+
+<!-- ═══ CONTEXTE ═══ -->
+<g class="node" id="node-context" onclick="showInfo('context')">
+  <rect x="90" y="393" width="530" height="100" rx="10" fill="#1a0e2e" stroke="#7c3aed" stroke-width="2"/>
+  <text x="355" y="419" text-anchor="middle" fill="#c4b5fd" font-size="14" font-weight="600">📦 Contexte envoyé à l'API</text>
+  <text x="355" y="441" text-anchor="middle" fill="#7d8590" font-size="11">system prompt  (CLAUDE.md + memory + skills actifs + tools defs)</text>
+  <text x="355" y="459" text-anchor="middle" fill="#7d8590" font-size="11">+ historique conversation  (user msgs + réponses LLM + tool_use + tool_results)</text>
+  <text x="355" y="477" text-anchor="middle" fill="#7d8590" font-size="11">max ~200 000 tokens  →  /compact pour résumer  ·  /clear pour réinitialiser</text>
+</g>
+
+<!-- ═══ BAS : outils locaux ═══ -->
+
+<!-- Fichiers locaux -->
+<g class="node" id="node-files" onclick="showInfo('files')">
+  <rect x="20" y="513" width="155" height="82" rx="8" fill="#161b22" stroke="#3d444d" stroke-width="1.5"/>
+  <text x="97" y="539" text-anchor="middle" fill="#8b949e" font-size="13" font-weight="600">📁 Fichiers locaux</text>
+  <text x="97" y="558" text-anchor="middle" fill="#7d8590" font-size="11">Read · Write · Bash</text>
+  <text x="97" y="573" text-anchor="middle" fill="#7d8590" font-size="11">Grep · Glob · Edit</text>
+  <text x="97" y="587" text-anchor="middle" fill="#7d8590" font-size="10">→ résultat dans contexte</text>
+</g>
+
+<!-- Agents -->
+<g class="node" id="node-agents" onclick="showInfo('agents')">
+  <rect x="190" y="513" width="280" height="82" rx="8" fill="#1c0a0a" stroke="#f85149" stroke-width="2"/>
+  <text x="330" y="539" text-anchor="middle" fill="#f85149" font-size="13" font-weight="600">🤖 Agents</text>
+  <text x="330" y="558" text-anchor="middle" fill="#7d8590" font-size="11">sous-tâches autonomes</text>
+  <text x="330" y="573" text-anchor="middle" fill="#7d8590" font-size="11">contexte isolé · lancé via tool Agent</text>
+  <text x="330" y="587" text-anchor="middle" fill="#7d8590" font-size="10">Explore · Plan · general-purpose · claude-code-guide</text>
+</g>
+
+<!-- MCP Servers -->
+<g class="node" id="node-mcp" onclick="showInfo('mcp')">
+  <rect x="490" y="513" width="240" height="82" rx="8" fill="#120d1c" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="610" y="539" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="600">🔌 MCP Servers</text>
+  <text x="610" y="558" text-anchor="middle" fill="#7d8590" font-size="11">processus séparés (stdio / HTTP)</text>
+  <text x="610" y="573" text-anchor="middle" fill="#7d8590" font-size="11">Gmail · GDrive · Slack…</text>
+  <text x="610" y="587" text-anchor="middle" fill="#7d8590" font-size="10">configurés dans settings.json → mcpServers</text>
+</g>
+
+<!-- ═══ LLM (zone cloud) ═══ -->
+<g class="node" id="node-llm" onclick="showInfo('llm')">
+  <rect x="770" y="45" width="270" height="235" rx="10" fill="#051a08" stroke="#238636" stroke-width="2.5"/>
+  <text x="905" y="78"  text-anchor="middle" fill="#3fb950" font-size="16" font-weight="700">🧠 LLM Claude</text>
+  <text x="905" y="98"  text-anchor="middle" fill="#7d8590" font-size="11">modèle de langage (cloud)</text>
+  <line x1="790" y1="108" x2="1020" y2="108" stroke="#1c3a1c" stroke-width="1"/>
+  <text x="905" y="130" text-anchor="middle" fill="#e6edf3" font-size="12">Reçoit le contexte assemblé</text>
+  <text x="905" y="152" text-anchor="middle" fill="#e6edf3" font-size="12">Génère :</text>
+  <text x="905" y="174" text-anchor="middle" fill="#bc8cff" font-size="12">• tool_use  (JSON)</text>
+  <text x="905" y="194" text-anchor="middle" fill="#58a6ff" font-size="12">• réponse texte finale</text>
+  <line x1="790" y1="208" x2="1020" y2="208" stroke="#1c3a1c" stroke-width="1"/>
+  <text x="905" y="227" text-anchor="middle" fill="#7d8590" font-size="11">Ne touche pas le disque</text>
+  <text x="905" y="244" text-anchor="middle" fill="#7d8590" font-size="11">ni le réseau directement</text>
+  <text x="905" y="261" text-anchor="middle" fill="#7d8590" font-size="11">sonnet-4-6 · opus-4-7 · haiku-4-5</text>
+</g>
+
+<!-- ═══ FLÈCHES API Context ↔ LLM ═══ -->
+
+<!-- Contexte → LLM (envoi via HTTPS) -->
+<path d="M620,422 C680,422 730,190 770,190" stroke="#58a6ff" stroke-width="2" fill="none" marker-end="url(#arr-blue)" opacity="0.9"/>
+<text x="708" y="288" fill="#58a6ff"  font-size="11" text-anchor="middle">contexte →</text>
+<text x="708" y="302" fill="#7d8590"  font-size="10" text-anchor="middle">HTTPS API</text>
+
+<!-- LLM → CLI (réponse API : tool_use ou texte final) -->
+<path d="M770,230 C730,230 680,262 620,262" stroke="#3fb950" stroke-width="2" fill="none" stroke-dasharray="6 3" marker-end="url(#arr-green)" opacity="0.9"/>
+<text x="708" y="228" fill="#3fb950" font-size="11" text-anchor="middle">← réponse API</text>
+<text x="708" y="242" fill="#7d8590" font-size="10" text-anchor="middle">tool_use · ou texte final</text>
+
+<!-- ═══ LÉGENDE (zone cloud, sous LLM) ═══ -->
+<rect x="770" y="308" width="270" height="210" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<text x="905" y="330" text-anchor="middle" fill="#7d8590" font-size="12" font-weight="600">Légende</text>
+
+<line x1="790" y1="350" x2="830" y2="350" stroke="#7c3aed" stroke-width="2"/>
+<text x="840" y="354" fill="#c4b5fd" font-size="11">injecté dans le contexte</text>
+
+<line x1="790" y1="373" x2="830" y2="373" stroke="#f7a300" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="840" y="377" fill="#e3b341" font-size="11">configure le CLI</text>
+
+<line x1="790" y1="396" x2="830" y2="396" stroke="#58a6ff" stroke-width="2"/>
+<text x="840" y="400" fill="#58a6ff" font-size="11">envoi contexte (HTTPS)</text>
+
+<line x1="790" y1="419" x2="830" y2="419" stroke="#3fb950" stroke-width="2" stroke-dasharray="6 3"/>
+<text x="840" y="423" fill="#3fb950" font-size="11">retour LLM (tool_use)</text>
+
+<line x1="790" y1="442" x2="830" y2="442" stroke="#f85149" stroke-width="2"/>
+<text x="840" y="446" fill="#f85149" font-size="11">lance un agent</text>
+
+<line x1="790" y1="465" x2="830" y2="465" stroke="#3d444d" stroke-width="2"/>
+<text x="840" y="469" fill="#8b949e" font-size="11">exécution tool locale</text>
+
+<text x="905" y="498" text-anchor="middle" fill="#7d8590" font-size="10" font-style="italic">↑ Cliquer sur un composant</text>
+<text x="905" y="511" text-anchor="middle" fill="#7d8590" font-size="10" font-style="italic">pour voir son rôle en détail</text>
+
+</svg>
+</div>
+
+<div class="info-panel" id="info-panel">
+  <div id="info-placeholder" class="info-placeholder">Clique sur un composant pour voir son rôle dans l'architecture</div>
+  <div id="info-content" style="display:none">
+    <div class="info-title"  id="info-title"></div>
+    <div class="info-body"   id="info-body"></div>
+    <div class="info-example" id="info-example"></div>
+  </div>
+</div>
+
+<script>
+const INFO = {
+  claudemd: {
+    title: '📄 CLAUDE.md — Instructions projet persistantes',
+    body: 'Fichier markdown lu par le CLI au démarrage. Son contenu est injecté verbatim dans le system prompt à chaque conversation. Sert à donner des instructions durables : architecture du projet, commandes à connaître, conventions, règles métier. Peut être placé à la racine et dans les sous-dossiers (les deux sont fusionnés).',
+    example: '# CLAUDE.md\n## Stack\n- Backend Java 21, Spring Boot 3\n- Frontend React 18, Vite\n## Commandes\n- Build : mvn clean package\n- Tests : mvn test -pl backend\n\n→ Injecté automatiquement dans le contexte à chaque session\n→ Remplace les instructions répétées manuellement'
+  },
+  memory: {
+    title: '🧠 memory/ — Mémoire persistante inter-sessions',
+    body: 'Fichiers markdown dans ~/.claude/projects/<projet>/memory/. Le CLI lit MEMORY.md (index) et charge les fichiers pertinents dans le contexte. Contrairement à CLAUDE.md (instructions stables), memory stocke des informations évolutives : profil utilisateur, feedbacks reçus, contexte projet du moment.',
+    example: 'Types de mémoire :\n• user      → profil, rôle, niveau technique\n• feedback  → corrections et validations reçues\n• project   → contexte, décisions, deadlines\n• reference → où trouver quoi (Linear, Grafana…)\n\n→ Écrits/lus via les tools Write/Read comme n\'importe quel fichier'
+  },
+  skills: {
+    title: '⚡ Skills — Compétences invocables avec /slash',
+    body: 'Fichiers markdown qui définissent un workflow. Quand tu tapes /marp-build, le CLI charge le fichier skill correspondant et injecte ses instructions dans le contexte : le LLM les lit comme une procédure à suivre. Permet d\'encapsuler des workflows complexes et de les réutiliser sans les retaper.',
+    example: '# skill: marp-build\nRun these steps:\n1. npx @marp-team/marp-cli slides.md --html --theme-set theme.css -o slides.html\n2. node inject-jokes.mjs\n3. Report success with slide count\n\n→ Déclenché par /marp-build\n→ Définis dans ~/.claude/skills/ ou .claude/skills/'
+  },
+  settings: {
+    title: '⚙️ settings.json — Configuration du comportement du CLI',
+    body: 'Fichier JSON de configuration du CLI (.claude/settings.json ou ~/.claude/settings.json). Contrôle trois choses : les permissions (quels tools sont auto-approuvés), les hooks (scripts shell déclenchés sur des events), et les serveurs MCP (quels processus démarrer). Hiérarchie : global → projet → local.',
+    example: '{\n  "permissions": {\n    "allow": ["Bash(npm:*)", "Bash(python:*)"]\n  },\n  "hooks": {\n    "PostToolUse": [{\n      "matcher": "Edit",\n      "hooks": [{ "type": "command", "command": "python rebuild.py" }]\n    }]\n  },\n  "mcpServers": {\n    "gmail": { "command": "npx", "args": ["@gmail-mcp/server"] }\n  }\n}'
+  },
+  cli: {
+    title: '⚙️ CLI Node.js — L\'orchestrateur local (le cœur de Claude Code)',
+    body: 'Application Node.js qui tourne sur ta machine. Au démarrage : lit settings.json, charge CLAUDE.md + memory, démarre les MCP servers. Ensuite il boucle : assemble contexte → envoie à l\'API → reçoit réponse → si tool_use : exécute localement → renvoie tool_result → recommence. S\'arrête quand le LLM génère une réponse texte pure.',
+    example: 'Boucle CLI :\n1. Assemble contexte → POST /v1/messages\n2. Réponse = { type: "tool_use", name: "Read", input: { file_path: "/src/foo.js" } }\n3. CLI exécute  fs.readFileSync("/src/foo.js")  localement\n4. Renvoie  { type: "tool_result", content: "..." }  → retour étape 1\n5. Quand réponse = texte pur → affiche à l\'utilisateur, attend la prochaine saisie'
+  },
+  context: {
+    title: '📦 Contexte — Ce que le LLM "voit" à chaque appel API',
+    body: 'Le contexte est le payload JSON envoyé à l\'API à chaque tour. Il contient : le system prompt (CLAUDE.md + memory + skills actifs), les définitions JSON Schema des tools disponibles, et l\'historique complet de la conversation (messages user, réponses LLM, tool_use blocks, tool_results). Limité à ~200k tokens.',
+    example: 'Token budget approximatif :\n• CLAUDE.md              :   6 000 tokens\n• memory/                :   4 000 tokens\n• tools definitions      :   5 000 tokens\n• Historique (croît)     : +2 000 tokens / tour\n──────────────────────────────────────────────\n→ /compact  : résume l\'historique → libère de l\'espace\n→ /clear    : repart de zéro (garde le system prompt)'
+  },
+  llm: {
+    title: '🧠 LLM Claude — Le modèle de langage (cloud Anthropic)',
+    body: 'Tourne dans le cloud Anthropic. Ne touche jamais directement le disque, le réseau, ni les fichiers locaux — tout passe par le CLI. Reçoit le contexte assemblé et génère soit un bloc tool_use (JSON précisant quel tool appeler avec quels args), soit une réponse texte finale.',
+    example: 'Exemple de réponse LLM avec tool_use :\n{\n  "type": "tool_use",\n  "id": "toolu_01Xabc",\n  "name": "Edit",\n  "input": {\n    "file_path": "/src/main.py",\n    "old_string": "def foo():",\n    "new_string": "def bar():"\n  }\n}\n→ Le CLI intercepte ce JSON et exécute l\'édition localement\n→ Le LLM ne sait pas ce que font les tools, seulement leur description'
+  },
+  files: {
+    title: '📁 Fichiers locaux — Exécution des tools système',
+    body: 'Quand le LLM émet un tool_use {Read, "/path/file"}, le CLI exécute fs.readFileSync localement et renvoie le contenu dans un tool_result. Même logique pour Write, Edit (string replace), Glob (find), Grep (ripgrep), Bash (child_process.spawn). Le résultat entre dans le contexte — c\'est comme ça que le LLM "voit" ton code.',
+    example: 'tool_use   → { name: "Bash", input: { command: "npm test" } }\nCLI exec   → child_process.spawn("npm", ["test"])\ntool_result → { content: "PASS src/foo.test.js (3 tests, 0.4s)" }\n→ Ce résultat rentre dans le contexte LLM\n→ Le LLM peut réagir et décider du prochain appel (ou conclure)'
+  },
+  agents: {
+    title: '🤖 Agents — Sous-tâches autonomes avec contexte isolé',
+    body: 'Le tool Agent lance un appel API séparé avec un contexte propre et isolé du contexte principal. Utile pour paralléliser des recherches, protéger le contexte principal, ou déléguer à un agent spécialisé. L\'agent travaille de façon autonome et renvoie son résultat comme un tool_result au CLI principal.',
+    example: 'Types d\'agents disponibles :\n• Explore          → recherche rapide read-only  (Glob, Grep, Read)\n• general-purpose  → tâches multi-étapes        (tous tools)\n• Plan             → conception architecture    (pas d\'écriture)\n• claude-code-guide→ questions Claude Code / API Anthropic\n\n→ Le résultat de l\'agent entre dans le contexte principal comme tool_result\n→ Chaque agent a son propre budget de 200k tokens'
+  },
+  mcp: {
+    title: '🔌 MCP Servers — Extensions via Model Context Protocol',
+    body: 'Le CLI démarre des processus séparés (Node.js, Python…) définis dans settings.json → mcpServers. Ces processus exposent des tools supplémentaires au LLM via le protocole MCP (stdio ou HTTP). Gmail, Google Drive, Slack, Linear… deviennent des tools comme Read ou Bash. Le CLI fait le pont.',
+    example: '# settings.json\n"mcpServers": {\n  "gmail": {\n    "command": "npx",\n    "args": ["@anthropic/mcp-server-gmail"]\n  }\n}\n→ CLI démarre  npx @anthropic/mcp-server-gmail\n→ Tools dispo : mcp__gmail__search_threads\n               mcp__gmail__create_draft\n               mcp__gmail__get_thread…'
+  }
+};
+
+function showInfo(key) {
+  const d = INFO[key];
+  if (!d) return;
+  document.getElementById('info-placeholder').style.display = 'none';
+  const content = document.getElementById('info-content');
+  content.style.display = 'block';
+  document.getElementById('info-title').textContent   = d.title;
+  document.getElementById('info-body').textContent    = d.body;
+  document.getElementById('info-example').textContent = d.example;
+  document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+  const node = document.getElementById('node-' + key);
+  if (node) node.classList.add('active');
+}
+</script>
+
+<script>
+function setTheme(theme) { /* diagram uses inline dark theme */ }
+window.addEventListener('message', (e) => { if (e.data && e.data.theme) setTheme(e.data.theme); });
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+  } catch(e) {}
+});
+</script>
+</body>
+</html>

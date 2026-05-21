@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Agents en parallèle</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/background-agents-explainer.css">
+</head>
+<body>
+
+<h1>⚡ Agents en parallèle</h1>
+<p class="subtitle">De <code>/plan</code> à l'exécution parallèle — 5 étapes</p>
+
+<!-- Stepper -->
+<div class="stepper">
+  <div class="step-item active" id="step-1"><span class="step-num">1</span>/plan</div>
+  <div class="step-item" id="step-2"><span class="step-num">2</span>Skills</div>
+  <div class="step-item" id="step-3"><span class="step-num">3</span>Agents</div>
+  <div class="step-item" id="step-4"><span class="step-num">4</span>Parallèle</div>
+  <div class="step-item" id="step-5"><span class="step-num">5</span>Terminé</div>
+</div>
+
+<!-- Layout -->
+<div class="main">
+
+  <!-- Left: conversation -->
+  <div class="panel">
+    <div class="panel-header conv">💬 Conversation principale</div>
+    <div class="feed" id="feed">
+      <div id="placeholder" style="color:var(--text-muted);font-size:13px;padding:32px 20px;text-align:center;opacity:0.5">
+        <div style="font-size:34px;margin-bottom:8px">⚡</div>
+        Lance la démo pour démarrer
+      </div>
+    </div>
+    <div class="feed-action">
+      <button class="start-btn" id="btn-main" onclick="mainAction()">▶ Démarrer la démo</button>
+    </div>
+  </div>
+
+  <!-- Right: plan / agents -->
+  <div class="right-col">
+    <div class="panel" id="right-panel">
+      <div class="panel-header agents" id="right-hdr">📋 Plan en cours</div>
+
+      <!-- Plan steps view -->
+      <div id="view-plan">
+        <div class="plan-preview">
+          <div class="plan-empty" id="plan-empty">
+            <div class="plan-empty-icon">📋</div>
+            Lance <code style="font-size:12px;color:var(--teal)">/plan</code> pour voir le plan ici
+          </div>
+          <div id="plan-steps"></div>
+        </div>
+      </div>
+
+      <!-- Agents view (hidden until phase 4) -->
+      <div class="agents-grid" id="agents-grid"></div>
+    </div>
+
+    <!-- Summary box (phase 5) -->
+    <div class="panel" id="summary-box" style="display:none">
+      <div class="panel-header" style="color:var(--green)">✅ Résultats</div>
+      <div style="padding:14px 16px">
+        <div class="summary-stats">
+          <div class="stat-box"><div class="stat-val green">4</div><div class="stat-lbl">fichiers modifiés</div></div>
+          <div class="stat-box"><div class="stat-val">4</div><div class="stat-lbl">agents terminés</div></div>
+          <div class="stat-box"><div class="stat-val">~14s</div><div class="stat-lbl">durée parallèle</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:var(--text-muted);font-size:14px">~45s</div><div class="stat-lbl">durée séquentielle</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ Modal: Plan ══════════ -->
+<div class="modal-overlay" id="m-plan">
+  <div class="modal plan-m">
+    <div class="mhdr">
+      <div class="mhdr-icon">📋</div>
+      <div>
+        <div class="mhdr-title">Plan Mode — Chapitre 3 · Nadia Kaci</div>
+        <div class="mhdr-sub">5 étapes · Généré par Claude en mode Plan</div>
+      </div>
+    </div>
+    <div class="mbody">
+      <div class="plan-term">
+<span class="pt-cmd">$ /plan rédiger chapitre-3 — Nadia Kaci, journaliste</span>
+<span class="pt-sep">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="pt-title">Étape 1 — Contexte narratif</span>
+<span class="pt-line">Fichiers : <span class="pt-file">chapitre-1.md, chapitre-2.md, personnages.md</span></span>
+<span class="pt-line">→ Relire les chapitres précédents, noter les fils en suspens</span>
+<span class="pt-line">→ Identifier les mentions de Nadia dans ch.1 et ch.2</span>
+<span class="pt-gap"></span>
+<span class="pt-title">Étape 2 — Profil Nadia Kaci</span>
+<span class="pt-line">→ Journaliste d'investigation, curieuse, directe</span>
+<span class="pt-line">→ Angle : enquête sur la fermeture des commerces de proximité</span>
+<span class="pt-gap"></span>
+<span class="pt-title">Étape 3 — Scène d'ouverture</span>
+<span class="pt-line">→ Nadia devant <em>La Page Tournée</em>, carnet en main</span>
+<span class="pt-line">→ Dialogue Nadia-Elise — 1ère rencontre professionnelle</span>
+<span class="pt-gap"></span>
+<span class="pt-title">Étape 4 — Développement</span>
+<span class="pt-line">→ Découverte de l'histoire de Victor par Nadia</span>
+<span class="pt-line">→ Tension : jusqu'où aller dans l'enquête ?</span>
+<span class="pt-gap"></span>
+<span class="pt-title">Étape 5 — Intégration</span>
+<span class="pt-line">→ <span class="pt-kw">Write</span> › <span class="pt-file">chapitre-3.md</span></span>
+<span class="pt-line">→ <span class="pt-kw">Edit</span> › <span class="pt-file">nouvelle.md</span> — table des matières mise à jour</span>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="mbtn teal" onclick="closePlanModal()">Continuer → Proposer des skills ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ Modal: Skills ══════════ -->
+<div class="modal-overlay" id="m-skills">
+  <div class="modal skills-m">
+    <div class="mhdr">
+      <div class="mhdr-icon">🔧</div>
+      <div>
+        <div class="mhdr-title">Skills réutilisables détectés</div>
+        <div class="mhdr-sub">2 patterns méritent d'être encapsulés comme skills</div>
+      </div>
+    </div>
+    <div class="mbody">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Ces tâches apparaissent dans plusieurs chapitres — les encapsuler économise du temps sur les futures rédactions.</p>
+
+      <div class="skill-row checked" id="sk1" onclick="toggleSkill('sk1','cb1')">
+        <input type="checkbox" id="cb1" checked onclick="event.stopPropagation()">
+        <div>
+          <div class="sk-name">/chapter-opening</div>
+          <div class="sk-desc">Génère l'incipit standard d'un chapitre : lieu, heure, POV, atmosphère. Réutilisable pour chapitre-4, chapitre-5…</div>
+        </div>
+      </div>
+
+      <div class="skill-row checked" id="sk2" onclick="toggleSkill('sk2','cb2')">
+        <input type="checkbox" id="cb2" checked onclick="event.stopPropagation()">
+        <div>
+          <div class="sk-name">/character-dialogue</div>
+          <div class="sk-desc">Génère des dialogues selon le profil du personnage (ton, tics de langage, sous-texte). Basé sur personnages.md.</div>
+        </div>
+      </div>
+
+      <div class="skill-row off">
+        <input type="checkbox" disabled>
+        <div>
+          <div class="sk-name">/novel-structure</div>
+          <div class="sk-desc">Déjà couvert par le skill existant <code style="font-size:10px;color:var(--gold)">/narrative-arc</code> — pas de doublon utile.</div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <span style="font-size:11px;color:var(--text-muted);margin-right:auto">2 skills sélectionnés</span>
+      <button class="mbtn sec" onclick="closeM('m-skills')">Ignorer</button>
+      <button class="mbtn grn" onclick="approveSkills()">✅ Créer les 2 skills</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ Modal: Agents ══════════ -->
+<div class="modal-overlay" id="m-agents">
+  <div class="modal agents-m">
+    <div class="mhdr">
+      <div class="mhdr-icon">🤖</div>
+      <div>
+        <div class="mhdr-title">4 agents spécialisés configurés</div>
+        <div class="mhdr-sub">Chaque étape du plan est assignée à un agent expert</div>
+      </div>
+    </div>
+    <div class="mbody">
+      <div class="agent-row">
+        <div class="ar-icon">📖</div>
+        <div><div class="ar-type">context-reader</div><div class="ar-name">Relire chapitres 1 &amp; 2</div><div class="ar-desc">Read chapitre-1.md + chapitre-2.md + personnages.md. Identifier les fils en suspens et les mentions de Nadia.</div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-icon">✍️</div>
+        <div><div class="ar-type">prose-writer</div><div class="ar-name">Scène d'ouverture Nadia</div><div class="ar-desc">Incipit chapitre 3 : Nadia devant La Page Tournée, atmosphère, premier regard sur la librairie.</div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-icon">💬</div>
+        <div><div class="ar-type">dialogue-crafter</div><div class="ar-name">Dialogue Nadia-Elise</div><div class="ar-desc">1ère rencontre professionnelle. Ton journalistique de Nadia vs réserve d'Elise. Sous-texte sur Victor.</div></div>
+      </div>
+      <div class="agent-row">
+        <div class="ar-icon">🔗</div>
+        <div><div class="ar-type">integrator</div><div class="ar-name">Intégrer chapitre 3</div><div class="ar-desc">Write chapitre-3.md (version définitive) + Edit nouvelle.md (table des matières).</div></div>
+      </div>
+      <div class="parallel-note">
+        <span>⚡</span>
+        <span>Les 4 agents tourneront <strong>en parallèle en background</strong>.<br>Votre conversation reste libre pendant l'exécution.</span>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="mbtn sec" onclick="closeM('m-agents')">Annuler</button>
+      <button class="mbtn launch" onclick="launchAgents()">🚀 Lancer en background</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────
+const PLAN_STEPS = [
+  { label: 'Contexte narratif',        sub: 'chapitre-1.md, chapitre-2.md, personnages.md' },
+  { label: 'Profil Nadia Kaci',        sub: 'Journaliste · POV · motivations' },
+  { label: 'Scène d\'ouverture',       sub: 'Nadia devant La Page Tournée' },
+  { label: 'Dialogue Nadia-Elise',     sub: 'Découverte Victor · tension enquête' },
+  { label: 'Intégration nouvelle.md',  sub: 'chapitre-3.md + table des matières' },
+];
+
+const AGENTS = [
+  {
+    id: 'ag0', icon: '📖', type: 'context-reader',
+    name: 'Chapitres 1 & 2', task: 'Relecture + fils narratifs',
+    logs: ['Lecture context-reader.md…', 'Read(chapitre-1.md) — 180 lignes', 'Read(chapitre-2.md) — 210 lignes', '✓ 4 fils narratifs identifiés'],
+    ms: 7200, planStep: 1,
+  },
+  {
+    id: 'ag1', icon: '✍️', type: 'prose-writer',
+    name: 'Scène ouverture Nadia', task: 'Incipit chapitre 3',
+    logs: ['Lecture prose-writer.md…', 'Read(chapitre-1.md) — ton de référence', 'Write(chapitre-3-draft.md)', '✓ Scène d\'ouverture rédigée'],
+    ms: 11500, planStep: 3,
+  },
+  {
+    id: 'ag2', icon: '💬', type: 'dialogue-crafter',
+    name: 'Dialogue Nadia-Elise', task: '1ère rencontre professionnelle',
+    logs: ['Lecture dialogue-crafter.md…', 'Read(personnages.md)', 'Edit(chapitre-3-draft.md)', '✓ Dialogue naturalisé, sous-texte ok'],
+    ms: 9200, planStep: 4,
+  },
+  {
+    id: 'ag3', icon: '🔗', type: 'integrator',
+    name: 'Intégrer chapitre 3', task: 'nouvelle.md + table des matières',
+    logs: ['En attente agents 1 & 2…', 'Write(chapitre-3.md) — version finale', 'Edit(nouvelle.md)', '✓ Chapitre 3 intégré dans la nouvelle'],
+    ms: 14000, planStep: 5,
+  },
+];
+
+// ── State ──────────────────────────────────────────────────────────
+let phase = 0;
+let doneCount = 0;
+
+// ── Utilities ──────────────────────────────────────────────────────
+function d(id) { return document.getElementById(id); }
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function addMsg(type, roleHtml, bodyHtml) {
+  const feed = d('feed');
+  const el = document.createElement('div');
+  el.className = `feed-item ${type}`;
+  el.innerHTML = `<div class="role">${roleHtml}</div>${bodyHtml}`;
+  feed.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  feed.scrollTop = feed.scrollHeight;
+  return el;
+}
+
+function addTyping() {
+  const feed = d('feed');
+  const el = document.createElement('div');
+  el.className = 'typing';
+  el.innerHTML = `<span style="color:var(--green);font-size:11px">🤖 Claude</span><div class="tdots"><span></span><span></span><span></span></div>`;
+  feed.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  feed.scrollTop = feed.scrollHeight;
+  return el;
+}
+function rmTyping(el) { if (el && el.parentNode) el.parentNode.removeChild(el); }
+
+function setMainBtn(text, disabled, fn) {
+  const btn = d('btn-main');
+  btn.textContent = text;
+  btn.disabled = !!disabled;
+  if (fn) btn.onclick = fn;
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    const el = d('step-' + i);
+    el.classList.remove('active', 'done');
+    if (i < n)  el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  }
+}
+
+function openM(id) { d(id).classList.add('open'); }
+function closeM(id) { d(id).classList.remove('open'); }
+
+// ── Plan steps in right panel ──────────────────────────────────────
+function showPlanSteps() {
+  d('plan-empty').style.display = 'none';
+  const container = d('plan-steps');
+  container.innerHTML = '';
+  PLAN_STEPS.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'plan-step-row';
+    row.id = 'ps' + i;
+    row.innerHTML = `<div class="pnum">${i+1}</div><div class="plabel"><strong>${s.label}</strong><small>${s.sub}</small></div>`;
+    container.appendChild(row);
+    setTimeout(() => row.classList.add('show'), i * 90);
+  });
+}
+
+function planStepActive(i)  { const el = d('ps' + i); if (el) { el.classList.remove('done'); el.classList.add('active'); } }
+function planStepDone(i)    { const el = d('ps' + i); if (el) { el.classList.remove('active'); el.classList.add('done'); } }
+
+// ── Agent cards ────────────────────────────────────────────────────
+function buildAgentCards() {
+  d('view-plan').style.display = 'none';
+  const grid = d('agents-grid');
+  grid.style.display = 'flex';
+  d('right-hdr').textContent = '🤖 Agents background';
+
+  AGENTS.forEach((a, i) => {
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    card.id = a.id;
+    card.innerHTML = `
+      <div class="acard-hdr">
+        <span class="acard-icon">${a.icon}</span>
+        <span class="acard-name">${a.name}</span>
+        <span class="abadge wait" id="${a.id}-badge">⏳ Prêt</span>
+      </div>
+      <div class="atask">${a.task}</div>
+      <div class="aprog-track"><div class="aprog-fill" id="${a.id}-bar"></div></div>
+      <div class="alog" id="${a.id}-log">—</div>
+    `;
+    grid.appendChild(card);
+    setTimeout(() => card.classList.add('show'), i * 120);
+  });
+}
+
+function runAgent(a) {
+  const card  = d(a.id);
+  const badge = d(a.id + '-badge');
+  const bar   = d(a.id + '-bar');
+  const log   = d(a.id + '-log');
+
+  card.classList.add('running');
+  badge.className = 'abadge run';
+  badge.innerHTML = `<span class="spin"></span> En cours`;
+
+  const start = performance.now();
+  const logStep = a.ms / a.logs.length;
+  let li = 0;
+
+  const logT = setInterval(() => {
+    if (li < a.logs.length) log.textContent = a.logs[li++];
+  }, logStep);
+
+  const barT = setInterval(() => {
+    const pct = Math.min(99, (performance.now() - start) / a.ms * 100);
+    bar.style.width = pct + '%';
+  }, 40);
+
+  setTimeout(() => {
+    clearInterval(logT);
+    clearInterval(barT);
+    bar.style.width = '100%';
+    log.textContent = a.logs[a.logs.length - 1];
+    card.classList.remove('running');
+    card.classList.add('done');
+    badge.className = 'abadge done';
+    badge.textContent = '✅ Terminé';
+    planStepDone(a.planStep - 1);
+    toast(a.icon, a.name, a.type);
+    doneCount++;
+    if (doneCount === AGENTS.length) setTimeout(finalize, 700);
+  }, a.ms);
+}
+
+function toast(icon, name, type) {
+  const wrap = d('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<div class="toast-icon">${icon}</div><div><strong>✅ ${name}</strong><small>${type} — terminé</small></div>`;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 4200);
+}
+
+// ── Phases ────────────────────────────────────────────────────────
+async function mainAction() {
+  if (phase === 0) startP1();
+}
+
+async function startP1() {
+  phase = 1;
+  setMainBtn('…', true);
+  d('placeholder').remove();
+  setStep(1);
+
+  addMsg('user', 'Vous', '<span class="co">/plan</span> rédiger chapitre-3 — Nadia Kaci, journaliste');
+  await delay(550);
+
+  const t = addTyping(); await delay(1100); rmTyping(t);
+
+  addMsg('tool', '🔧 Read', '<code>CLAUDE.md</code> — instructions projet nouvelle');
+  await delay(320);
+  addMsg('tool', '🔧 Glob', '<code>chapitre-*.md</code> — 4 chapitres trouvés');
+  await delay(320);
+  addMsg('tool', '🔧 Read', '<code>chapitre-2.md</code> — dernier chapitre rédigé');
+  await delay(440);
+
+  const t2 = addTyping(); await delay(950); rmTyping(t2);
+
+  addMsg('claude', '🤖 Claude',
+    `J'ai analysé l'architecture narrative. Le plan tient en <span class="ht">5 étapes</span> claires — contexte, profil Nadia, scène d'ouverture, dialogue, et intégration.<br><br>
+    <button class="ibtn" onclick="openM('m-plan')">📋 Voir le plan complet</button>`
+  );
+
+  showPlanSteps();
+  setMainBtn('📋 Voir le plan', false, () => openM('m-plan'));
+}
+
+function closePlanModal() {
+  closeM('m-plan');
+  startP2();
+}
+
+async function startP2() {
+  phase = 2;
+  setMainBtn('…', true);
+  setStep(2);
+  await delay(380);
+
+  const t = addTyping(); await delay(950); rmTyping(t);
+
+  addMsg('claude', '🤖 Claude',
+    `Ce plan contient des patterns que j'applique régulièrement pour d'autres chapitres.<br>
+    Je peux les encapsuler en <span class="hg">skills réutilisables</span> — disponibles pour chapitre-4, chapitre-5… sans repartir de zéro.<br><br>
+    <button class="ibtn g" onclick="openM('m-skills')">🔧 Voir les propositions (2 skills)</button>`
+  );
+
+  setMainBtn('🔧 Voir les propositions', false, () => openM('m-skills'));
+}
+
+function toggleSkill(rowId, cbId) {
+  const row = d(rowId);
+  if (row.classList.contains('off')) return;
+  row.classList.toggle('checked');
+  const cb = d(cbId);
+  if (cb) cb.checked = row.classList.contains('checked');
+}
+
+function approveSkills() {
+  closeM('m-skills');
+  startP3();
+}
+
+async function startP3() {
+  phase = 3;
+  setMainBtn('…', true);
+  setStep(3);
+  await delay(280);
+
+  addMsg('tool', '⚙️ Write', '<code>/chapter-opening.md</code> — skill créé dans .claude/skills/');
+  await delay(280);
+  addMsg('tool', '⚙️ Write', '<code>/character-dialogue.md</code> — skill créé dans .claude/skills/');
+  await delay(400);
+
+  const t = addTyping(); await delay(900); rmTyping(t);
+
+  addMsg('claude', '🤖 Claude',
+    `<span class="hg">✅ 2 skills créés</span> — disponibles dès la prochaine session.<br><br>
+    Pour exécuter ce plan en un minimum de temps, je peux assigner chaque étape à un <span class="ht">agent spécialisé</span> et les lancer tous en parallèle en arrière-plan.<br>
+    <span style="color:var(--text-muted);font-size:12px">Votre fenêtre de contexte reste intacte — les agents tournent en isolation.</span><br><br>
+    <button class="ibtn p" onclick="openM('m-agents')">🤖 Configurer les agents (4)</button>`
+  );
+
+  setMainBtn('🤖 Configurer les agents', false, () => openM('m-agents'));
+}
+
+function launchAgents() {
+  closeM('m-agents');
+  startP4();
+}
+
+async function startP4() {
+  phase = 4;
+  setMainBtn('⏳ Agents en cours…', true);
+  setStep(4);
+  await delay(300);
+
+  const t = addTyping(); await delay(800); rmTyping(t);
+
+  addMsg('claude', '🤖 Claude',
+    `<span class="ht">🚀 4 agents lancés en background.</span><br>
+    Vous pouvez continuer à travailler normalement — je vous notifierai dès qu'un agent termine.<br>
+    <span style="color:var(--text-muted);font-size:12px">Les agents s'exécutent dans des contextes isolés et n'affectent pas votre conversation.</span>`
+  );
+
+  buildAgentCards();
+  PLAN_STEPS.forEach((_, i) => planStepActive(i));
+  AGENTS.forEach((a, i) => setTimeout(() => runAgent(a), i * 120));
+}
+
+async function finalize() {
+  phase = 5;
+  setStep(5);
+  PLAN_STEPS.forEach((_, i) => planStepDone(i));
+
+  const t = addTyping(); await delay(900); rmTyping(t);
+
+  addMsg('claude', '🤖 Claude',
+    `<span class="hg">✅ Plan terminé — Chapitre 3 de <em>La Page Tournée</em> est prêt.</span><br><br>
+    <strong>Fichiers créés / modifiés :</strong><br>
+    <span style="color:var(--gold)">+</span> <code>chapitre-3-draft.md</code> — 120 lignes<br>
+    <span style="color:var(--gold)">+</span> <code>chapitre-3.md</code> — 145 lignes<br>
+    <span style="color:var(--teal)">~</span> <code>nouvelle.md</code> · <code>personnages.md</code><br><br>
+    <span style="color:var(--text-muted);font-size:12px">⚡ 14s en parallèle vs ~45s en séquentiel</span>`
+  );
+
+  d('summary-box').style.display = 'block';
+  setMainBtn('↺ Recommencer', false, () => location.reload());
+}
+
+// Close modals on overlay click
+['m-plan','m-skills','m-agents'].forEach(id => {
+  d(id).addEventListener('click', e => { if (e.target === d(id)) closeM(id); });
+});
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) toggle.checked = isProjector;
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Skill Card (avec skill)</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/skill-card.css">
+</head>
+<body>
+
+<h1>✨ Skill Card</h1>
+<p class="subtitle">Création de carte avec skill — design cohérent, tokens maîtrisés</p>
+<div class="badge-skill"><span>✅ Avec skill</span></div>
+
+<!-- Context bar -->
+<div class="context-section">
+  <div class="context-header">
+    <span class="context-label">Contexte Claude</span>
+    <span class="context-tokens" id="ctx-tokens">~2 000 tokens</span>
+  </div>
+  <div class="context-track">
+    <div class="context-fill" id="ctx-fill" style="width: 2%"></div>
+  </div>
+  <div class="context-log" id="ctx-log">
+    <div class="log-entry visible">
+      <span class="action">session start</span> — <span class="tok">+2 000 tok</span> — instructions système chargées
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="left-panel">
+    <div class="left-title">Action</div>
+    <button class="create-btn" id="create-btn" onclick="createCard()">✨ Skill Card</button>
+    <div class="click-counter">Clics : <span id="click-count">0</span> / 3</div>
+    <div class="skill-note">
+      Le skill encapsule le pattern : Claude l'appelle directement, sans réinventer la mise en page.
+    </div>
+  </div>
+
+  <div class="right-panel" id="right-panel">
+    <div class="empty-state" id="empty-state">Les cartes apparaîtront ici…</div>
+  </div>
+</div>
+
+<script>
+  let clickCount = 0;
+
+  const people = [
+    { nom: 'Moreau', prenom: 'Elise',  tel: '+33 6 14 22 38 51', adresse: '12 rue du Vieux-Marché, 76000 Rouen' },
+    { nom: 'Berger', prenom: 'Tom',    tel: '+33 7 82 17 63 44', adresse: '3 pl. de la République, 75011 Paris' },
+    { nom: 'Kaci',   prenom: 'Nadia',  tel: '+33 6 91 04 57 28', adresse: '8 rue des Écrivains, 69001 Lyon' },
+  ];
+
+  const tokenSteps = [
+    { add: 3200, total: '~5 200 tokens', pct: 6,  action: '/skill-card invoked', detail: 'skill appelé directement — pattern réutilisé, aucune réinvention' },
+    { add: 3200, total: '~8 400 tokens', pct: 10, action: '/skill-card invoked', detail: 'même skill, même résultat — contexte quasi identique au 1er appel' },
+    { add: 3200, total: '~11 600 tokens', pct: 14, action: '/skill-card invoked', detail: 'cohérence garantie — consommation stable et prévisible' },
+  ];
+
+  function createCard() {
+    if (clickCount >= 3) return;
+
+    const p = people[clickCount];
+    const step = tokenSteps[clickCount];
+    clickCount++;
+
+    document.getElementById('empty-state').style.display = 'none';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.innerHTML = `
+      <div class="skill-card">
+        <div class="card-header">
+          <div class="card-title">👤 Fiche Contact</div>
+          <span class="skill-tag">skill/card</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <div class="field-label"><span class="icon">🏷</span> Nom</div>
+            <div class="field-value">${p.nom}</div>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="icon">✏️</span> Prénom</div>
+            <div class="field-value">${p.prenom}</div>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="icon">📞</span> Téléphone</div>
+            <div class="field-value">${p.tel}</div>
+          </div>
+          <div class="field full">
+            <div class="field-label"><span class="icon">📍</span> Adresse</div>
+            <div class="field-value">${p.adresse}</div>
+          </div>
+        </div>
+      </div>`;
+
+    const note = document.createElement('div');
+    note.className = 'card-number';
+    note.textContent = `Carte #${clickCount} — design identique aux autres ✓`;
+    wrap.appendChild(note);
+
+    document.getElementById('right-panel').appendChild(wrap);
+    setTimeout(() => wrap.classList.add('show'), 30);
+
+    // Update context
+    document.getElementById('ctx-tokens').textContent = step.total;
+    const fill = document.getElementById('ctx-fill');
+    fill.style.width = step.pct + '%';
+
+    // Add log entry
+    const log = document.getElementById('ctx-log');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="action">${step.action}</span> — <span class="tok">+${step.add.toLocaleString('fr')} tok</span> — ${step.detail}`;
+    log.appendChild(entry);
+    setTimeout(() => entry.classList.add('visible'), 50);
+
+    document.getElementById('click-count').textContent = clickCount;
+
+    if (clickCount >= 3) {
+      document.getElementById('create-btn').disabled = true;
+    }
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+    
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code vs Claude Cowork</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #f6f8fa;
+  color: #1f2328;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 4px;
+  color: #0969a5;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #57606a;
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+
+code {
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  background: #f0f2f5;
+  border: 1px solid #d0d7de;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #57606a;
+  margin: 32px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #d0d7de;
+}
+
+/* Header */
+.header-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1px;
+  background: #d0d7de;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden;
+}
+
+.header-cell {
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.header-cell.label   { background: #f0f2f5; text-align: left; color: #57606a; }
+.header-cell.code-col  { background: #dbeafe; color: #1d4ed8; }
+.header-cell.work-col  { background: #fff3e0; color: #b45309; }
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.badge.cli  { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+.badge.desk { background: #fff3e0; color: #b45309; border: 1px solid #fcd34d; }
+
+/* Table */
+.table-wrap {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1px;
+  background: #d0d7de;
+  border-top: 1px solid #d0d7de;
+}
+.table-row:first-child { border-top: none; }
+
+.cell {
+  background: #fff;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cell.feature  { color: #1f2328; }
+.cell.code-val { background: #f0f6ff; }
+.cell.work-val { background: #fffbf0; }
+
+.cell .tag {
+  display: inline-block;
+  font-family: 'Cascadia Code', monospace;
+  font-size: 11px;
+  color: #b35c00;
+  background: #fff8f0;
+  border: 1px solid #f0d0a0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.cell .desc {
+  font-size: 11px;
+  color: #57606a;
+  margin-top: 2px;
+}
+
+.yes     { color: #1a7f37; font-weight: 700; }
+.no      { color: #cf222e; }
+.partial { color: #b35c00; font-weight: 600; }
+
+.group-label {
+  grid-column: 1 / -1;
+  background: #f0f2f5;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #57606a;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.card li {
+  font-size: 12.5px;
+  color: #57606a;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+.card li .icon { flex-shrink: 0; margin-top: 1px; }
+
+/* Callout */
+.callout {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-left: 3px solid #0969a5;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #57606a;
+  line-height: 1.7;
+}
+.callout strong { color: #1f2328; }
+
+.pill-preview {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde047;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <h1>Claude Code vs Claude Cowork</h1>
+  <p class="subtitle">Deux outils Anthropic, deux philosophies — développeurs vs knowledge workers</p>
+
+  <!-- Legend -->
+  <div style="display:flex;gap:20px;justify-content:center;margin-bottom:28px;font-size:12px;">
+    <span><span class="yes">✓</span> Disponible</span>
+    <span><span class="partial">~</span> Partiel / différent</span>
+    <span><span class="no">✗</span> Absent</span>
+  </div>
+
+  <!-- Table header -->
+  <div class="header-row">
+    <div class="header-cell label">Fonctionnalité</div>
+    <div class="header-cell code-col">Claude Code <span class="badge cli">CLI</span></div>
+    <div class="header-cell work-col">Claude Cowork <span class="badge desk">Desktop</span></div>
+  </div>
+
+  <div class="table-wrap">
+
+    <!-- GROUP: Interface & accès -->
+    <div class="table-row"><div class="group-label">Interface &amp; accès</div></div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">interface</span>
+        <div class="desc">Comment on interagit avec Claude</div>
+      </div>
+      <div class="cell code-val">
+        Terminal (CLI) — saisie texte, sortie texte
+      </div>
+      <div class="cell work-val">
+        Application de bureau Claude Desktop (macOS / Windows)
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">public cible</span>
+      </div>
+      <div class="cell code-val">Développeurs, profils techniques</div>
+      <div class="cell work-val">Tous profils — admin, finance, juridique, ops, marketing</div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">prérequis</span>
+      </div>
+      <div class="cell code-val">
+        <div class="desc"><code>npm install -g @anthropic-ai/claude-code</code></div>
+      </div>
+      <div class="cell work-val">
+        Claude Desktop installé + plan payant (Pro, Max, Team, Enterprise)
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">mobile</span>
+        <div class="desc">Piloter Claude depuis un téléphone</div>
+      </div>
+      <div class="cell code-val"><span class="no">✗</span></div>
+      <div class="cell work-val">
+        <span class="yes">✓</span>
+        <div class="desc">Assignation de tâches depuis le mobile (Pro/Max) — exécution sur le desktop</div>
+      </div>
+    </div>
+
+    <!-- GROUP: Fichiers & outputs -->
+    <div class="table-row"><div class="group-label">Fichiers &amp; outputs</div></div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">accès fichiers</span>
+        <div class="desc">Lire et écrire sur le système de fichiers local</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Système complet</span>
+        <div class="desc">Read / Write / Edit / Glob / Grep — tout le filesystem, lecture à la demande</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Dossiers désignés</span>
+        <div class="desc">Accès aux dossiers autorisés — lecture/écriture sans upload manuel. Exécution dans une VM isolée.</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">outputs bureautiques</span>
+        <div class="desc">Générer des fichiers Office directement utilisables</div>
+      </div>
+      <div class="cell code-val">
+        <span class="no">✗</span>
+        <div class="desc">Texte et code — pas de génération Excel/PowerPoint natifs</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓</span>
+        <div class="desc">Excel avec formules fonctionnelles, PowerPoint, documents formatés</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">browser automation</span>
+        <div class="desc">Extraire des données depuis le web</div>
+      </div>
+      <div class="cell code-val">
+        <span class="partial">~ WebFetch</span>
+        <div class="desc">Récupération de pages, pas d'interaction navigateur</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Extension Chrome</span>
+        <div class="desc">Extraction de dashboards, comparaison de prix, récupération de rapports publics</div>
+      </div>
+    </div>
+
+    <!-- GROUP: Contexte & mémoire -->
+    <div class="table-row"><div class="group-label">Contexte &amp; mémoire</div></div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">instructions projet</span>
+        <div class="desc">Règles persistantes chargées à chaque session</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ CLAUDE.md hiérarchique</span>
+        <div class="desc">Global → projet → sous-dossier, cumulatif, hors contexte conversationnel</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Folder instructions</span>
+        <div class="desc">Instructions par projet, modifiables par Claude en cours de session</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">memory</span>
+        <div class="desc">Mémoire persistante entre sessions</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Structurée</span>
+        <div class="desc">4 types (user / project / feedback / reference), fichiers Markdown, granulaire</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Par projet</span>
+        <div class="desc">Mémoire partagée par projet — contexte et fichiers persistants entre sessions</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">contrôle du contexte</span>
+        <div class="desc">/compact, /clear, rewind — maîtriser ce que Claude voit</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Complet</span>
+        <div class="desc">/compact, /clear, rewind, tokens visibles, cache configurable</div>
+      </div>
+      <div class="cell work-val">
+        <span class="no">✗ Subi</span>
+        <div class="desc">Pas de visibilité ni de contrôle sur la consommation de contexte</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">longues tâches</span>
+        <div class="desc">Travailler sur des projets dépassant la fenêtre de contexte</div>
+      </div>
+      <div class="cell code-val">
+        <span class="partial">~ Via /compact + agents</span>
+        <div class="desc">Géré manuellement ou par agents avec contextes isolés</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Natif</span>
+        <div class="desc">Conçu pour les projets longs sans interruption par timeout</div>
+      </div>
+    </div>
+
+    <!-- GROUP: Agents & spécialisation -->
+    <div class="table-row"><div class="group-label">Agents &amp; spécialisation</div></div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">plan</span>
+        <div class="desc">Valider la stratégie avant toute exécution</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Mode dédié</span>
+        <div class="desc">Claude expose le plan, attend validation humaine avant d'agir</div>
+      </div>
+      <div class="cell work-val">
+        <span class="no">✗</span>
+        <div class="desc">Pas de mode plan protégé</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">skill</span>
+        <div class="desc">Commandes réutilisables pour des tâches récurrentes</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓</span>
+        <div class="desc">Natifs + personnalisés dans <code>.claude/commands/</code></div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Intégré</span>
+        <div class="desc">Système de skills intégré — 70 prompts prêts à l'emploi (admin, sales, ops…)</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">agents / subagents</span>
+        <div class="desc">Déléguer des sous-tâches à des agents spécialisés</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Définis en .md</span>
+        <div class="desc">Contexte isolé, outils restreints, foreground/background</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Parallèles</span>
+        <div class="desc">Plusieurs workers en parallèle sur des tâches complexes (ex : 50 transcriptions simultanées)</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">intégrations</span>
+        <div class="desc">Connexion à des outils tiers</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Git, CI/CD, IDE</span>
+        <div class="desc">Bash, git, éditeurs, pipelines — tout ce qui est accessible en shell</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ 11 plugins officiels</span>
+        <div class="desc">Asana, Canva, Figma, GitHub, Google Drive, Jira, Linear, Notion, Sentry, Slack, Cloudflare</div>
+      </div>
+    </div>
+
+    <!-- GROUP: Automatisation -->
+    <div class="table-row"><div class="group-label">Automatisation</div></div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">tâches planifiées</span>
+        <div class="desc">Automatiser des actions récurrentes sans intervention humaine</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓ Hooks + cron + remote-control</span>
+        <div class="desc">Configurable librement — scripts shell, cron jobs, CI/CD</div>
+      </div>
+      <div class="cell work-val">
+        <span class="yes">✓ Planificateur intégré</span>
+        <div class="desc">Planification quotidienne, hebdomadaire ou à la demande depuis l'interface</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">hooks</span>
+        <div class="desc">Scripts déclenchés automatiquement sur événements Claude</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓</span>
+        <div class="desc">Pre/PostToolUse, Stop — actions shell à chaque événement</div>
+      </div>
+      <div class="cell work-val"><span class="no">✗</span></div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">remote-control</span>
+        <div class="desc">Déclencher Claude depuis un script, une API, un autre programme</div>
+      </div>
+      <div class="cell code-val">
+        <span class="yes">✓</span>
+        <div class="desc"><code>claude -p "..."</code>, SDK Anthropic, webhooks</div>
+      </div>
+      <div class="cell work-val">
+        <span class="partial">~ Mobile</span>
+        <div class="desc">Assignation depuis le téléphone uniquement — pas d'API programmatique</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">status-line</span>
+        <div class="desc">Visibilité temps réel sur ce que fait Claude</div>
+      </div>
+      <div class="cell code-val"><span class="yes">✓</span></div>
+      <div class="cell work-val">
+        <span class="partial">~ Interface visuelle</span>
+        <div class="desc">Suivi dans l'application desktop, pas de monitoring terminal</div>
+      </div>
+    </div>
+
+    <!-- GROUP: Stabilité & plans -->
+    <div class="table-row"><div class="group-label">Stabilité &amp; plans</div></div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">stabilité</span>
+      </div>
+      <div class="cell code-val"><span class="yes">✓ Stable</span></div>
+      <div class="cell work-val">
+        <span class="partial">~ Research preview</span>
+        <div class="desc">Bugs attendus — OCR ~97% précision champs, ~63% lignes. Incompatible VPN.</div>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="cell feature">
+        <span class="tag">plans requis</span>
+      </div>
+      <div class="cell code-val">Pro → Max</div>
+      <div class="cell work-val">Pro, Max, Team, Enterprise</div>
+    </div>
+
+  </div>
+
+  <!-- Summary cards -->
+  <p class="section-title">En deux mots</p>
+
+  <div class="cards">
+    <div class="card" style="border-color:#1d4ed8;">
+      <div class="card-title" style="color:#0969da">
+        <span>⌨</span> Claude Code — pour contrôler
+      </div>
+      <ul>
+        <li><span class="icon yes">✓</span> Maîtrise totale du contexte : /compact, rewind, plan, agents isolés</li>
+        <li><span class="icon yes">✓</span> S'intègre dans n'importe quel workflow technique (git, CI/CD, shell)</li>
+        <li><span class="icon yes">✓</span> Automatisation fine via hooks et remote-control</li>
+        <li><span class="icon yes">✓</span> CLAUDE.md hiérarchique — règles projet hors contexte</li>
+        <li><span class="icon no">✗</span> Pas d'outputs bureautiques natifs ni d'intégrations Slack/Notion</li>
+        <li><span class="icon no">✗</span> Courbe d'apprentissage — profil technique requis</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#d97706;">
+      <div class="card-title" style="color:#b45309">
+        <span>🖥</span> Claude Cowork — pour déléguer <span class="pill-preview">preview</span>
+      </div>
+      <ul>
+        <li><span class="icon yes">✓</span> Génère de vrais fichiers bureautiques (Excel, PowerPoint)</li>
+        <li><span class="icon yes">✓</span> 11 plugins officiels (Slack, Notion, Jira, Google Drive…)</li>
+        <li><span class="icon yes">✓</span> Planificateur intégré + assignation mobile</li>
+        <li><span class="icon yes">✓</span> Workflows métier clés en main — 70 prompts prêts à l'emploi</li>
+        <li><span class="icon no">✗</span> Aucun contrôle du contexte — fenêtre subie</li>
+        <li><span class="icon no">✗</span> Research preview — instable, incompatible VPN</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Callout -->
+  <div class="callout">
+    <strong>La différence fondamentale :</strong>
+    Claude Code donne le <strong>contrôle</strong> — sur le contexte, les fichiers, les agents, le pipeline.
+    Claude Cowork donne la <strong>délégation</strong> — des tâches métier complètes sans savoir coder, avec des outputs directement utilisables.<br><br>
+    Les deux ont des agents et des tâches planifiées, mais avec des philosophies opposées :
+    Code externalise et optimise, Cowork intègre et simplifie.
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Rewind</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/rewind-explainer.css">
+</head>
+<body>
+
+<h1>⏪ Claude Code — Rewind</h1>
+<p class="subtitle">Visualisation de l'effet du rewind sur le contexte de Claude</p>
+
+<div class="layout">
+
+  <!-- ══ AVANT ══ -->
+  <div class="panel">
+    <div class="panel-header before">
+      <span class="dot blue"></span>
+      Contexte avant rewind
+    </div>
+    <div class="context-bar">
+      <span>Contexte :</span>
+      <div class="context-fill">
+        <div class="context-fill-inner high" style="width: 78%"></div>
+      </div>
+      <span id="ctx-before">~78 000 tokens</span>
+    </div>
+    <div class="selector-bar">
+      <label>Point de rewind :</label>
+      <select id="rewind-select" onchange="applyRewind()">
+        <option value="4">Après message 4 — "Analyse le rythme"</option>
+        <option value="2">Après message 2 — "Rédige scene-rencontre.md"</option>
+        <option value="6">Après message 6 — "Crée notes-rythme"</option>
+      </select>
+    </div>
+    <div class="messages">
+      <div class="msg user" data-idx="1">
+        <div class="msg-role">Vous — message 1</div>
+        <div class="msg-text">Peux-tu rédiger la scène 3 du chapitre 2 — la rencontre entre Tom et Nadia ?</div>
+      </div>
+      <div class="msg claude" data-idx="2">
+        <div class="msg-role">Claude — message 2</div>
+        <div class="msg-text">Je vais lire <span class="code">chapitre-2.md</span> puis écrire la scène. Je crée <span class="code">scene-rencontre.md</span> provisoirement.</div>
+      </div>
+      <div class="msg user" data-idx="4">
+        <div class="msg-role">Vous — message 4</div>
+        <div class="msg-text">Analyse le rythme du chapitre 2 et propose des améliorations.</div>
+      </div>
+      <div class="msg claude" data-idx="5">
+        <div class="msg-role">Claude — message 5</div>
+        <div class="msg-text">J'identifie 3 passages lents : la description du bureau de Tom, le trajet vers la librairie, et l'attente de Nadia.</div>
+      </div>
+      <div class="msg tool" data-idx="3">
+        <div class="msg-role">⚙ Tool call — Write + Edit</div>
+        <div class="msg-text">Write › <span class="code">scene-rencontre.md</span> — nouveau fichier créé<br>Edit › <span class="code">chapitre-2.md</span> — scène intégrée</div>
+      </div>
+      <div class="msg user" data-idx="6">
+        <div class="msg-role">Vous — message 6</div>
+        <div class="msg-text">Crée un fichier notes-rythme.md avec toutes les propositions d'amélioration.</div>
+      </div>
+      <div class="msg claude" data-idx="7">
+        <div class="msg-role">Claude — message 7</div>
+        <div class="msg-text">Je génère <span class="code">notes-rythme.md</span> avec les suggestions classées par scène.</div>
+      </div>
+      <div class="msg tool" data-idx="8">
+        <div class="msg-role">⚙ Tool call — Write</div>
+        <div class="msg-text">Write › <span class="code">notes-rythme.md</span> — fichier créé (54 lignes)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOUTONS CENTRAUX ══ -->
+  <div class="arrow-col">
+    <button class="arrow-btn" onclick="triggerAnimation()">⏪ REWIND</button>
+    <button class="clickme-btn" id="clickme-btn" onclick="openModal()">Click Me !!</button>
+  </div>
+
+  <!-- ══ APRÈS ══ -->
+  <div class="panel">
+    <div class="panel-header after">
+      <span class="dot green"></span>
+      Contexte après rewind
+    </div>
+    <div class="context-bar">
+      <span>Contexte :</span>
+      <div class="context-fill">
+        <div class="context-fill-inner medium" id="ctx-bar-after" style="width: 78%"></div>
+      </div>
+      <span id="ctx-after">~78 000 tokens</span>
+    </div>
+    <div class="selector-bar" style="opacity:0.4; pointer-events:none;">
+      <label>État : en attente du rewind…</label>
+    </div>
+    <div class="messages" id="after-messages">
+      <div class="msg user" data-after="1">
+        <div class="msg-role">Vous — message 1</div>
+        <div class="msg-text">Peux-tu rédiger la scène 3 du chapitre 2 — la rencontre entre Tom et Nadia ?</div>
+      </div>
+      <div class="msg claude" data-after="2">
+        <div class="msg-role">Claude — message 2</div>
+        <div class="msg-text">Je vais lire <span class="code">chapitre-2.md</span> puis écrire la scène. Je crée <span class="code">scene-rencontre.md</span> provisoirement.</div>
+      </div>
+      <div class="rewind-marker" id="rewind-marker" style="display:none;">
+        <span>⏪</span> Point de rewind
+      </div>
+      <div class="msg user" data-after="4">
+        <div class="msg-role">Vous — message 4</div>
+        <div class="msg-text">Analyse le rythme du chapitre 2 et propose des améliorations.</div>
+      </div>
+      <div class="msg claude" data-after="5">
+        <div class="msg-role">Claude — message 5</div>
+        <div class="msg-text">J'identifie 3 passages lents : la description du bureau de Tom, le trajet vers la librairie, et l'attente de Nadia.</div>
+      </div>
+      <div class="msg tool" data-after="3">
+        <div class="msg-role">⚙ Tool call — Write + Edit</div>
+        <div class="msg-text">Write › <span class="code">scene-rencontre.md</span> — nouveau fichier créé<br>Edit › <span class="code">chapitre-2.md</span> — scène intégrée</div>
+      </div>
+      <div class="msg user" data-after="6">
+        <div class="msg-role">Vous — message 6</div>
+        <div class="msg-text">Crée un fichier notes-rythme.md avec toutes les propositions d'amélioration.</div>
+      </div>
+      <div class="msg claude" data-after="7">
+        <div class="msg-role">Claude — message 7</div>
+        <div class="msg-text">Je génère <span class="code">notes-rythme.md</span> avec les suggestions classées par scène.</div>
+      </div>
+      <div class="msg tool" data-after="8">
+        <div class="msg-role">⚙ Tool call — Write</div>
+        <div class="msg-text">Write › <span class="code">notes-rythme.md</span> — fichier créé (54 lignes)</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">💾 Ce que le rewind ne fait PAS</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+
+      <!-- Typing 1 -->
+      <div class="typing-indicator claude-typing" id="typing-1">
+        <div class="avatar claude-av">🤖</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+      <!-- Bubble 1 -->
+      <div class="conv-bubble claude" id="bubble-1">
+        <div class="avatar claude-av">🤖</div>
+        <div>
+          <div class="bubble-name">Claude</div>
+          <div class="bubble-text">
+            Fabrice, j'espère que tu sais que les fichiers que j'avais modifiés n'ont <strong>pas</strong> été remis comme avant. Je t'avais dit d'utiliser Git pourtant&nbsp;😄
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing 2 -->
+      <div class="typing-indicator user-typing" id="typing-2">
+        <div class="avatar user-av">👤</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+      <!-- Bubble 2 -->
+      <div class="conv-bubble user" id="bubble-2">
+        <div class="avatar user-av">👤</div>
+        <div>
+          <div class="bubble-name">Fabrice</div>
+          <div class="bubble-text">
+            😤 Hein… mais j'ai fait un rewind ?!
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing 3 -->
+      <div class="typing-indicator claude-typing" id="typing-3">
+        <div class="avatar claude-av">🤖</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+      <!-- Bubble 3 -->
+      <div class="conv-bubble claude" id="bubble-3">
+        <div class="avatar claude-av">🤖</div>
+        <div>
+          <div class="bubble-name">Claude</div>
+          <div class="bubble-text">
+            Oui ! Mais le rewind n'agit que sur ma <strong>mémoire de conversation</strong>. Les fichiers sur ton disque, eux, sont bel et bien modifiés. Ces deux fichiers existent toujours chez toi&nbsp;:
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing 4 -->
+      <div class="typing-indicator user-typing" id="typing-4">
+        <div class="avatar user-av">👤</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+      <!-- Bubble 4 — Fabrice répond -->
+      <div class="conv-bubble user" id="bubble-4">
+        <div class="avatar user-av">👤</div>
+        <div>
+          <div class="bubble-name">Fabrice</div>
+          <div class="bubble-text">
+            C'est bon, je vais utiliser Git maintenant 🙏<br>
+            <span style="font-size:11px; color:var(--text-muted); margin-top:4px; display:block;">@nicolas 🐹🐹</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning box -->
+      <div class="warning-box" id="warning-box">
+        <strong>⚠ Fichiers toujours présents sur le disque :</strong><br>
+        <code>scene-rencontre.md</code> — créé lors du message 3<br>
+        <code>notes-rythme.md</code> — créé lors du message 8<br><br>
+        Pour les restaurer :<br>
+        <code>git restore .</code> &nbsp;— annule toutes les modifications non commitées<br>
+        <code>git restore &lt;fichier&gt;</code> &nbsp;— pour un fichier précis
+      </div>
+
+    </div>
+    <div class="modal-footer" style="opacity:0; transition: opacity 0.4s;">
+      <button class="btn-ok" onclick="closeModal()">Fermer ✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let rewound = false;
+  let currentRewindPoint = 4;
+  let clickmeTimer = null;
+
+  const contextSizes = {
+    2: { tokens: '~18 000 tokens', pct: 18, cls: 'low' },
+    4: { tokens: '~34 000 tokens', pct: 34, cls: 'low' },
+    6: { tokens: '~56 000 tokens', pct: 56, cls: 'medium' },
+  };
+
+  function applyRewind() {
+    currentRewindPoint = parseInt(document.getElementById('rewind-select').value);
+    if (rewound) doRewind();
+  }
+
+  function triggerAnimation() {
+    rewound = true;
+    doRewind();
+
+    // Cache le bouton pendant le délai, puis l'affiche après 5s
+    const btn = document.getElementById('clickme-btn');
+    btn.style.display = 'none';
+    clearTimeout(clickmeTimer);
+    clickmeTimer = setTimeout(() => {
+      btn.style.display = 'block';
+    }, 5000);
+  }
+
+  function doRewind() {
+    const point = currentRewindPoint;
+    const msgs = document.querySelectorAll('#after-messages .msg[data-after]');
+    const marker = document.getElementById('rewind-marker');
+
+    msgs.forEach(m => m.classList.remove('erased'));
+    marker.style.display = 'none';
+
+    const pointMsg = document.querySelector(`#after-messages .msg[data-after="${point}"]`);
+    if (pointMsg) {
+      pointMsg.after(marker);
+      marker.style.display = 'flex';
+    }
+
+    setTimeout(() => {
+      msgs.forEach(m => {
+        if (parseInt(m.getAttribute('data-after')) > point) m.classList.add('erased');
+      });
+
+      const info = contextSizes[point] || { tokens: '~34 000 tokens', pct: 34, cls: 'low' };
+      const bar = document.getElementById('ctx-bar-after');
+      bar.style.width = info.pct + '%';
+      bar.className = 'context-fill-inner ' + info.cls;
+      document.getElementById('ctx-after').textContent = info.tokens;
+
+      const sel = document.querySelector('.panel:last-child .selector-bar');
+      sel.style.opacity = '1';
+      sel.style.pointerEvents = 'auto';
+      sel.innerHTML = `<label>✅ Rewind appliqué au message ${point}</label>`;
+    }, 100);
+  }
+
+  let modalPlayed = false;
+
+  function openModal() {
+    document.getElementById('modal-overlay').classList.add('open');
+    if (!modalPlayed) {
+      modalPlayed = true;
+      playConversation();
+    }
+  }
+
+  function playConversation() {
+    const steps = [
+      // [typingId, bubbleId, typingDelay, showDelay]
+      ['typing-1', 'bubble-1',     0,  3000],
+      ['typing-2', 'bubble-2',  3200,  6200],
+      ['typing-3', 'bubble-3',  6400,  9400],
+      ['typing-4', 'bubble-4',  9600, 12600],
+      [null,       'warning-box', null, 12800],
+    ];
+
+    steps.forEach(([typingId, bubbleId, typingDelay, showDelay]) => {
+      if (typingId) {
+        setTimeout(() => {
+          document.getElementById(typingId).classList.add('show');
+          document.getElementById('modal-body').scrollTop = 9999;
+        }, typingDelay);
+      }
+      setTimeout(() => {
+        if (typingId) document.getElementById(typingId).classList.remove('show');
+        const el = document.getElementById(bubbleId);
+        el.classList.add('visible');
+        document.getElementById('modal-body').scrollTop = 9999;
+      }, showDelay);
+    });
+
+    // Show footer button after all messages
+    setTimeout(() => {
+      document.querySelector('.modal-footer').style.opacity = '1';
+    }, 13200);
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

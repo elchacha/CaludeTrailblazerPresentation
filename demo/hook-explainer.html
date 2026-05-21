@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Hook</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/hook-explainer.css">
+</head>
+<body>
+
+<h1>🪝 Hook</h1>
+<p class="subtitle">Le hook intercepte le rewind et propose d'agir sur les fichiers avant</p>
+<div class="hook-badge-wrap">
+  <div class="hook-badge">
+    <span class="blink-dot"></span>
+    Hook actif — on:rewind
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ══ AVANT ══ -->
+  <div class="panel">
+    <div class="panel-header before">
+      <span class="dot blue"></span>
+      Contexte avant rewind
+    </div>
+    <div class="context-bar">
+      <span>Contexte :</span>
+      <div class="context-fill">
+        <div class="context-fill-inner high" style="width: 78%"></div>
+      </div>
+      <span id="ctx-before">~78 000 tokens</span>
+    </div>
+    <div class="selector-bar">
+      <label>Point de rewind :</label>
+      <select id="rewind-select" onchange="applyRewind()">
+        <option value="4">Après message 4 — "Analyse la cohérence"</option>
+        <option value="2">Après message 2 — "Modifie chapitre-4.md"</option>
+        <option value="6">Après message 6 — "Crée arc-victor"</option>
+      </select>
+    </div>
+    <div class="restore-banner" id="restore-banner">
+      <div class="spin"></div>
+      <span>git restore . — suppression des fichiers modifiés en cours…</span>
+    </div>
+    <div class="messages">
+      <div class="msg user" data-idx="1">
+        <div class="msg-role">Vous — message 1</div>
+        <div>Peux-tu rédiger la scène finale du chapitre 4 — Victor révèle son secret ?</div>
+      </div>
+      <div class="msg claude" data-idx="2">
+        <div class="msg-role">Claude — message 2</div>
+        <div>Je vais lire <span class="code">chapitre-4.md</span> puis écrire la scène. Je crée <span class="code">scene-finale.md</span> et développe le dialogue.</div>
+      </div>
+      <div class="msg user" data-idx="4">
+        <div class="msg-role">Vous — message 4</div>
+        <div>Analyse la cohérence entre le chapitre 1 et cette scène finale.</div>
+      </div>
+      <div class="msg claude" data-idx="5">
+        <div class="msg-role">Claude — message 5</div>
+        <div>J'identifie 3 tensions narratives : le regard de Victor au chapitre 1, la lettre non mentionnée, et le silence d'Elise.</div>
+      </div>
+      <div class="msg tool" data-idx="3">
+        <div class="msg-role">⚙ Tool call — Edit + Write</div>
+        <div>Edit › <span class="code">chapitre-4.md</span> — placeholder remplacé<br>Write › <span class="code">scene-finale.md</span> — nouveau fichier créé</div>
+      </div>
+      <div class="msg user" data-idx="6">
+        <div class="msg-role">Vous — message 6</div>
+        <div>Crée un plan d'arc narratif complet pour Victor.</div>
+      </div>
+      <div class="msg claude" data-idx="7">
+        <div class="msg-role">Claude — message 7</div>
+        <div>Je génère <span class="code">arc-victor.md</span> avec son arc sur les 4 chapitres.</div>
+      </div>
+      <div class="msg tool" data-idx="8">
+        <div class="msg-role">⚙ Tool call — Write</div>
+        <div>Write › <span class="code">arc-victor.md</span> — fichier créé (67 lignes)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CENTRE ══ -->
+  <div class="arrow-col">
+    <button class="arrow-btn" id="rewind-btn" onclick="openHookModal()">⏪ REWIND</button>
+  </div>
+
+  <!-- ══ APRÈS ══ -->
+  <div class="panel">
+    <div class="panel-header after">
+      <span class="dot green"></span>
+      Contexte après rewind
+    </div>
+    <div class="context-bar">
+      <span>Contexte :</span>
+      <div class="context-fill">
+        <div class="context-fill-inner medium" id="ctx-bar-after" style="width: 78%"></div>
+      </div>
+      <span id="ctx-after">~78 000 tokens</span>
+    </div>
+    <div class="selector-bar" style="opacity:0.4; pointer-events:none;" id="after-sel">
+      <label>État : en attente du rewind…</label>
+    </div>
+    <div class="messages" id="after-messages">
+      <div class="msg user" data-after="1">
+        <div class="msg-role">Vous — message 1</div>
+        <div>Peux-tu rédiger la scène finale du chapitre 4 — Victor révèle son secret ?</div>
+      </div>
+      <div class="msg claude" data-after="2">
+        <div class="msg-role">Claude — message 2</div>
+        <div>Je vais lire <span class="code">chapitre-4.md</span> puis écrire la scène. Je crée <span class="code">scene-finale.md</span> et développe le dialogue.</div>
+      </div>
+      <div class="rewind-marker" id="rewind-marker" style="display:none;">
+        <span>⏪</span> Point de rewind
+      </div>
+      <div class="msg user" data-after="4">
+        <div class="msg-role">Vous — message 4</div>
+        <div>Analyse la cohérence entre le chapitre 1 et cette scène finale.</div>
+      </div>
+      <div class="msg claude" data-after="5">
+        <div class="msg-role">Claude — message 5</div>
+        <div>J'identifie 3 tensions narratives : le regard de Victor au chapitre 1, la lettre non mentionnée, et le silence d'Elise.</div>
+      </div>
+      <div class="msg tool" data-after="3">
+        <div class="msg-role">⚙ Tool call — Edit + Write</div>
+        <div>Edit › <span class="code">chapitre-4.md</span> — placeholder remplacé<br>Write › <span class="code">scene-finale.md</span> — nouveau fichier créé</div>
+      </div>
+      <div class="msg user" data-after="6">
+        <div class="msg-role">Vous — message 6</div>
+        <div>Crée un plan d'arc narratif complet pour Victor.</div>
+      </div>
+      <div class="msg claude" data-after="7">
+        <div class="msg-role">Claude — message 7</div>
+        <div>Je génère <span class="code">arc-victor.md</span> avec son arc sur les 4 chapitres.</div>
+      </div>
+      <div class="msg tool" data-after="8">
+        <div class="msg-role">⚙ Tool call — Write</div>
+        <div>Write › <span class="code">arc-victor.md</span> — fichier créé (67 lignes)</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ HOOK MODAL ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-header-icon">🪝</span>
+      <div class="modal-header-text">
+        <div class="modal-header-title">Hook intercepté — on:rewind</div>
+        <div class="modal-header-sub">Un hook a été déclenché avant l'exécution du rewind</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="hook-msg">
+        Bonjour <span class="hi">Fabrice</span> 👋<br><br>
+        Je vois que tu n'utilises <span class="warn">toujours pas Git</span> 😅<br>
+        Heureusement, tu as eu la bonne idée de configurer un <span class="good">hook</span> ! 🪝<br><br>
+        J'ai détecté des fichiers modifiés depuis le début de la session :
+        <div class="files-detected">
+          <span class="f">📄 scene-finale.md</span> — créé (message 3)<br>
+          <span class="f">📄 arc-victor.md</span> — créé (message 8)
+        </div>
+        Dis-moi comment tu veux procéder 👇
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-restore-rewind" onclick="doRestoreThenRewind()">
+          🗑 Enlever les changements <strong>puis</strong> lancer le rewind
+          <span class="btn-sub">git restore . → rewind — tu repars vraiment de zéro ✅</span>
+        </button>
+        <button class="btn-just-rewind" onclick="doJustRewind()">
+          ⏪ Juste le rewind, sans toucher aux fichiers
+          <span class="btn-sub">Les fichiers modifiés restent sur le disque ⚠</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let rewound = false;
+  let currentRewindPoint = 4;
+
+  const contextSizes = {
+    2: { tokens: '~18 000 tokens', pct: 18, cls: 'low' },
+    4: { tokens: '~34 000 tokens', pct: 34, cls: 'low' },
+    6: { tokens: '~56 000 tokens', pct: 56, cls: 'medium' },
+  };
+
+  function applyRewind() {
+    currentRewindPoint = parseInt(document.getElementById('rewind-select').value);
+    if (rewound) doRewind();
+  }
+
+  function openHookModal() {
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+  function doJustRewind() {
+    closeModal();
+    rewound = true;
+    doRewind();
+  }
+
+  function doRestoreThenRewind() {
+    closeModal();
+    rewound = true;
+
+    // Show restore banner
+    const banner = document.getElementById('restore-banner');
+    banner.classList.add('show');
+
+    // Highlight tool messages (the ones that created files) as "being restored"
+    const toolMsgs = document.querySelectorAll('.msg.tool');
+    toolMsgs.forEach(m => m.classList.add('restoring'));
+
+    // After 1.8s: mark as restored, hide banner, run rewind
+    setTimeout(() => {
+      toolMsgs.forEach(m => {
+        m.classList.remove('restoring');
+        m.classList.add('restored');
+      });
+      banner.innerHTML = '<span style="color:var(--green)">✓</span> git restore . — fichiers supprimés avec succès';
+      banner.style.borderColor = 'var(--green)';
+      banner.style.color = 'var(--green)';
+
+      setTimeout(() => {
+        banner.classList.remove('show');
+        doRewind();
+      }, 1200);
+    }, 1800);
+  }
+
+  function doRewind() {
+    const point = currentRewindPoint;
+    const msgs = document.querySelectorAll('#after-messages .msg[data-after]');
+    const marker = document.getElementById('rewind-marker');
+
+    msgs.forEach(m => m.classList.remove('erased'));
+    marker.style.display = 'none';
+
+    const pointMsg = document.querySelector(`#after-messages .msg[data-after="${point}"]`);
+    if (pointMsg) {
+      pointMsg.after(marker);
+      marker.style.display = 'flex';
+    }
+
+    setTimeout(() => {
+      msgs.forEach(m => {
+        if (parseInt(m.getAttribute('data-after')) > point) m.classList.add('erased');
+      });
+
+      const info = contextSizes[point] || { tokens: '~34 000 tokens', pct: 34, cls: 'low' };
+      const bar = document.getElementById('ctx-bar-after');
+      bar.style.width = info.pct + '%';
+      bar.className = 'context-fill-inner ' + info.cls;
+      document.getElementById('ctx-after').textContent = info.tokens;
+
+      const sel = document.getElementById('after-sel');
+      sel.style.opacity = '1';
+      sel.style.pointerEvents = 'auto';
+      sel.innerHTML = `<label>✅ Rewind appliqué au message ${point}</label>`;
+
+      document.getElementById('rewind-btn').disabled = true;
+    }, 100);
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

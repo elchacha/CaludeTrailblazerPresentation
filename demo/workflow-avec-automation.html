@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Avec Automation</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/workflow-avec-automation.css">
+</head>
+<body>
+
+<!-- ── Resume modal ── -->
+<div class="modal-overlay" id="resume-modal" style="display:none" onclick="closeResumeModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">⚡ Résultat du skill /resume</span>
+      <span class="modal-badge" id="resume-badge">3 actions</span>
+      <button class="modal-close" onclick="closeResumeModal()">×</button>
+    </div>
+    <div class="modal-prompt" id="resume-prompt"></div>
+    <div id="resume-actions"></div>
+    <div class="modal-footer"><button onclick="closeResumeModal()">✓ Compris — continuer</button></div>
+  </div>
+</div>
+
+<h1>⚡ Avec Automation — Contexte maîtrisé</h1>
+<p class="subtitle">Hooks · Skills · Agents · Python — Claude répond en MD léger, délègue la construction HTML</p>
+
+<div class="controls">
+  <button class="btn primary" id="btn-play" onclick="startSim()">▶ Simuler une session</button>
+  <button class="btn" id="btn-reset" onclick="resetSim()">↺ Recommencer</button>
+  <span class="speed-label">Vitesse :</span>
+  <div class="speed-toggle">
+    <button id="sp-slow" onclick="setSpeed('slow')">Lente</button>
+    <button id="sp-norm" class="active" onclick="setSpeed('normal')">Normale</button>
+    <button id="sp-fast" onclick="setSpeed('fast')">Rapide</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-header feed-hdr">📥 Fil de session — ce qui entre dans le contexte</div>
+    <div class="feed" id="feed">
+      <div class="feed-placeholder">Appuie sur <strong>▶ Simuler</strong> pour démarrer</div>
+    </div>
+  </div>
+
+  <div class="ctx-right">
+    <div class="panel">
+      <div class="panel-header ctx-hdr">🪟 Fenêtre de contexte LLM</div>
+      <div class="ctx-stats">
+        <span class="ctx-stats-label">Utilisé</span>
+        <span class="ctx-stats-count" id="ctx-pct-display">0 %</span>
+        <span class="ctx-pct-label" id="ctx-k-display">0 k tokens</span>
+      </div>
+      <div class="ctx-window-wrap">
+        <div class="ctx-window-label">0 tokens <span id="ctx-window-size">200 000 tokens max</span></div>
+        <div class="ctx-bar-track" id="ctx-bar-track">
+          <div class="ctx-available" id="ctx-available" style="height:100%">disponible</div>
+          <div class="ctx-ruler" id="ctx-ruler"></div>
+        </div>
+        <div class="ctx-tokens-row">
+          <span id="ctx-tokens-used">0</span>
+          <span>/ 200 000 tokens</span>
+        </div>
+      </div>
+      <div class="exchange-indicator" id="exchange-indicator" style="display:none">
+        <div class="ei-title">Dernier échange Claude</div>
+        <div class="ei-row"><span class="ei-label">→ Prompt envoyé</span><span class="ei-val blue" id="ei-prompt">—</span></div>
+        <div class="ei-row"><span class="ei-label">← Réponse (Markdown)</span><span class="ei-val green" id="ei-response">—</span></div>
+        <div class="ei-sep"></div>
+        <div class="ei-outside-label">🐍 Hors contexte LLM</div>
+        <div class="ei-row"><span class="ei-label">📁 HTML reconstruit</span><span class="ei-val gold" id="ei-html">—</span></div>
+      </div>
+      <div class="ctx-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>CLAUDE.md + Memory</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div>Inputs utilisateur</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div>Réponses LLM (MD)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#39d0d8"></div>Skills / Agents</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Hooks (auto)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e3b341"></div>🍹 Délégué Python</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Resume data ──────────────────────────────────────────────────
+const RESUME_DATA = {
+  3: {
+    prompt: '$ /resume — 3 dernières actions majeures du projet',
+    actions: [
+      { title: 'slides.md — Slide 14 "Hooks & Automation" ajoutée', meta: '2026-04-19 16:32  ·  /add-slide 14', desc: 'Exemples PreToolUse/Stop, popup synchronisée via inject-jokes.mjs' },
+      { title: 'inject-jokes.mjs mis à jour',                        meta: '2026-04-19 15:48  ·  COWORK_SLIDE = 8', desc: 'Synchronisation après décalage de l\'index post-insertion slide 12' },
+      { title: 'theme-claudepres-projector.css créé',                meta: '2026-04-19 14:22  ·  mode projecteur', desc: 'Version haute visibilité : fond blanc, contraste élevé pour salle' },
+    ]
+  }
+};
+
+// ── 3 delegate animation types ───────────────────────────────────
+const JOKES = [
+  {
+    type: 'cocktail',
+    title: 'Délégation en cours…',
+    task: '🐍 Reconstruction HTML complète',
+    duration: 5200,
+    quote: '"Python, gère le HTML. Moi je réfléchis à des choses importantes."',
+    attr: '— Claude, sereinement',
+    aside: '(ça tourne vite, t\'inquiète)',
+  },
+  {
+    type: 'chat',
+    title: 'Pendant que Python tourne…',
+    task: '🐍 Merge du fragment Markdown',
+    duration: 6800,
+  },
+  {
+    type: 'agentforce',
+    title: 'Claude fait de la veille concurrentielle…',
+    task: '🐍 Mise à jour du fichier HTML',
+    duration: 6000,
+    manualClose: true,
+  },
+  {
+    type: 'cocktail',
+    title: 'Dernier verre 🏁',
+    task: '🐍 Finalisation HTML — dernier cycle',
+    duration: 5200,
+    quote: '"Dernier verre. HTML livré. Tout le monde est content."',
+    attr: '— Claude, satisfait',
+    aside: '(ce fichier ne verra jamais le contexte LLM)',
+  },
+];
+
+// ── Steps ────────────────────────────────────────────────────────
+const STEPS = [
+  {
+    src: 'claudemd', icon: '📄',
+    label: 'CLAUDE.md + Memory chargés',
+    desc: 'Instructions projet + fichiers mémoire ciblés — baseline minimal',
+    tokens: 15000, pct: 7.5, color: '#7c3aed',
+  },
+  {
+    src: 'user', icon: '👤',
+    label: '/resume — résumé des 3 dernières actions',
+    desc: 'Fabrice tape la commande pour reprendre le contexte du projet',
+    tokens: 250, pct: 0.12, color: '#58a6ff',
+  },
+  {
+    src: 'hook', icon: '🪝',
+    label: 'Hook PostMessage → /resume détecté',
+    desc: 'Le hook intercepte la commande et déclenche le skill automatiquement',
+    tokens: 0, pct: 0, color: '#f97316',
+  },
+  {
+    src: 'skill', icon: '⚡',
+    label: 'Skill /resume → 3 actions résumées',
+    desc: 'Lecture du projet précédent, synthèse des 3 dernières actions majeures',
+    tokens: 2000, pct: 1, color: '#39d0d8',
+    showResume: 3,
+  },
+  {
+    src: 'user', icon: '👤',
+    label: '/plan — démarrage de la session',
+    desc: 'Fabrice démarre le plan en s\'appuyant sur le résumé',
+    tokens: 300, pct: 0.15, color: '#58a6ff',
+  },
+  {
+    src: 'hook', icon: '🪝',
+    label: 'Hook PreToolUse → active l\'agent de planification',
+    desc: 'Le hook détecte /plan et prépare l\'agent avant l\'envoi à Claude',
+    tokens: 0, pct: 0, color: '#f97316',
+  },
+  {
+    src: 'skill', icon: '⚡',
+    label: 'Agent activé → prompt optimisé',
+    desc: 'L\'agent analyse le projet et prépare un prompt compact pour Claude',
+    tokens: 1500, pct: 0.75, color: '#39d0d8',
+  },
+  {
+    src: 'llm', icon: '🤖',
+    label: 'Claude répond — MD structuré 30 ko',
+    desc: '✅ Réponse légère : 15 000 tokens au lieu de 60 000',
+    tokens: 15000, pct: 7.5, color: '#3fb950',
+    promptTok: 1800, responseTok: 15000,
+  },
+  {
+    src: 'delegate', icon: '🍹',
+    label: 'Claude délègue — Skill Python reconstruit le HTML',
+    desc: 'Python transforme le MD en HTML complet. Claude ne voit pas le résultat.',
+    tokens: 0, pct: 0, color: '#e3b341', delegate: true, joke: 0, htmlKo: '122 ko',
+  },
+  // Cycle 1
+  {
+    src: 'user', icon: '👤',
+    label: 'Fabrice relit — modification ciblée',
+    desc: 'Ajustement d\'une section précise, prompt minimal',
+    tokens: 400, pct: 0.2, color: '#58a6ff',
+  },
+  {
+    src: 'hook', icon: '🪝',
+    label: 'Hook PreToolUse → compresse le contexte',
+    desc: 'Allège le prompt automatiquement avant chaque envoi à Claude',
+    tokens: 0, pct: 0, color: '#f97316',
+  },
+  {
+    src: 'llm', icon: '🤖',
+    label: 'Claude répond — MD fragment 1 ko',
+    desc: '✅ Seulement le morceau modifié : 500 tokens',
+    tokens: 500, pct: 0.25, color: '#3fb950',
+    promptTok: 400, responseTok: 500,
+  },
+  {
+    src: 'delegate', icon: '🍹',
+    label: 'Claude délègue — Python merge le fragment',
+    desc: 'Python intègre le fragment dans le HTML existant.',
+    tokens: 0, pct: 0, color: '#e3b341', delegate: true, joke: 1, htmlKo: '122 ko',
+  },
+  // Cycle 2
+  {
+    src: 'user', icon: '👤',
+    label: 'Fabrice relit — encore un ajustement',
+    desc: 'Retouche de style, animation à corriger',
+    tokens: 300, pct: 0.15, color: '#58a6ff',
+  },
+  {
+    src: 'hook', icon: '🪝',
+    label: 'Hook PreToolUse → compresse le contexte',
+    desc: 'Toujours automatique. Toujours discret.',
+    tokens: 0, pct: 0, color: '#f97316',
+  },
+  {
+    src: 'llm', icon: '🤖',
+    label: 'Claude répond — MD fragment 1 ko',
+    desc: '✅ Contexte stable — pas d\'accumulation de HTML',
+    tokens: 500, pct: 0.25, color: '#3fb950',
+    promptTok: 300, responseTok: 500,
+  },
+  {
+    src: 'delegate', icon: '🍹',
+    label: 'Claude délègue — Python met à jour le HTML',
+    desc: 'Même verre, même saveur.',
+    tokens: 0, pct: 0, color: '#e3b341', delegate: true, joke: 2, htmlKo: '122 ko',
+  },
+  // Cycle 3
+  {
+    src: 'user', icon: '👤',
+    label: 'Fabrice relit — derniers ajustements',
+    desc: 'Finalisation avant livraison',
+    tokens: 300, pct: 0.15, color: '#58a6ff',
+  },
+  {
+    src: 'hook', icon: '🪝',
+    label: 'Hook PreToolUse → compresse le contexte',
+    desc: 'Troisième fois. Aussi fiable que les deux premières.',
+    tokens: 0, pct: 0, color: '#f97316',
+  },
+  {
+    src: 'llm', icon: '🤖',
+    label: 'Claude répond — MD fragment 1 ko',
+    desc: '✅ Contexte toujours à ~20% — dernier échange',
+    tokens: 500, pct: 0.25, color: '#3fb950',
+    promptTok: 300, responseTok: 500,
+  },
+  {
+    src: 'delegate', icon: '🍹',
+    label: 'Claude délègue — Python finalise le HTML',
+    desc: 'HTML final prêt. Claude n\'a jamais eu le HTML dans son contexte.',
+    tokens: 0, pct: 0, color: '#e3b341', delegate: true, joke: 3, htmlKo: '122 ko',
+  },
+  // Auto-triggered analyse
+  {
+    src: 'hook', icon: '🪝',
+    label: 'Hook Stop → session importante détectée',
+    desc: '4 délégations Python, 3 cycles de modifications — /analyse déclenché automatiquement',
+    tokens: 0, pct: 0, color: '#f97316',
+  },
+  {
+    src: 'skill', icon: '⚡',
+    label: '/analyse — bilan de session automatique',
+    desc: 'Skill d\'analyse : détecte les tâches répétitives à automatiser',
+    tokens: 1000, pct: 0.5, color: '#39d0d8',
+  },
+  {
+    src: 'llm', icon: '🤖',
+    label: 'Propositions d\'amélioration',
+    desc: 'Claude identifie 4 pistes pour la prochaine session',
+    tokens: 3000, pct: 1.5, color: '#3fb950',
+    final: true, promptTok: 1000, responseTok: 3000,
+  },
+];
+
+const CHOICES = [
+  { icon: '⚡', label: 'Skill',     desc: 'Automatiser la reconstruction HTML' },
+  { icon: '🤖', label: 'Agent',     desc: 'Déléguer l\'analyse projet à un agent' },
+  { icon: '🧠', label: 'Memory',    desc: 'Sauvegarder les patterns en mémoire' },
+  { icon: '📄', label: 'CLAUDE.md', desc: 'Documenter les conventions du projet' },
+];
+
+// ── State ────────────────────────────────────────────────────────
+let speed = 'normal', running = false, simPaused = false;
+let currentStep = 0, totalTokens = 0, totalPct = 0, topOffset = 0, timer = null;
+let resumeCallback = null;
+
+const TOTAL_TOKENS = 200000, BAR_HEIGHT = 480;
+const SPEED_MS = { slow: 1800, normal: 900, fast: 300 };
+
+// ── Ruler ────────────────────────────────────────────────────────
+function buildRuler() {
+  const ruler = document.getElementById('ctx-ruler');
+  ruler.innerHTML = '';
+  [25, 50, 75, 100].forEach(pct => {
+    const tick = document.createElement('div');
+    tick.className = 'ctx-ruler-tick';
+    tick.style.top = (pct / 100 * BAR_HEIGHT - 1) + 'px';
+    tick.textContent = pct + '%';
+    ruler.appendChild(tick);
+  });
+}
+
+function updateStats(pct, tokens) {
+  document.getElementById('ctx-pct-display').textContent = Math.round(pct) + ' %';
+  document.getElementById('ctx-k-display').textContent   = Math.round(tokens / 1000) + ' k tokens';
+  document.getElementById('ctx-tokens-used').textContent = tokens.toLocaleString('fr-FR') + ' tokens';
+  const availPx = Math.max(0, BAR_HEIGHT * (1 - pct / 100));
+  const avail = document.getElementById('ctx-available');
+  avail.style.height  = availPx + 'px';
+  avail.style.opacity = availPx < 30 ? '0' : '1';
+}
+
+function addSegment(step) {
+  if (step.pct === 0) return;
+  const track = document.getElementById('ctx-bar-track');
+  const segPx = Math.max(step.pct / 100 * BAR_HEIGHT, 5);
+  const seg = document.createElement('div');
+  seg.className = 'ctx-segment';
+  seg.style.cssText = `top:${topOffset}px;height:0;background:${step.color};opacity:0.85;`;
+  const lbl = document.createElement('div');
+  lbl.className = 'ctx-segment-label';
+  lbl.textContent = step.label;
+  seg.appendChild(lbl);
+  track.insertBefore(seg, document.getElementById('ctx-available'));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    seg.style.height = segPx + 'px';
+    if (segPx >= 22) lbl.style.display = 'block';
+  }));
+  topOffset += segPx;
+}
+
+function updateExchange(promptTok, responseTok, htmlKo) {
+  document.getElementById('exchange-indicator').style.display = 'block';
+  if (promptTok   != null) document.getElementById('ei-prompt').textContent   = promptTok.toLocaleString('fr-FR') + ' tok';
+  if (responseTok != null) document.getElementById('ei-response').textContent = responseTok >= 1000 ? Math.round(responseTok/1000) + ' k tok' : responseTok + ' tok';
+  if (htmlKo      != null) document.getElementById('ei-html').textContent     = htmlKo;
+}
+
+// ── Feed ─────────────────────────────────────────────────────────
+function addFeedItem(step) {
+  const feed = document.getElementById('feed');
+  feed.querySelector('.feed-placeholder')?.remove();
+  const item = document.createElement('div');
+  item.className = `feed-item src-${step.src}`;
+  const tokLabel = step.tokens === 0
+    ? `<div class="feed-tokens ${step.src === 'hook' ? 'hook-tok' : 'delegated'}">${step.src === 'hook' ? 'auto' : 'hors contexte'}</div>`
+    : `<div class="feed-tokens">+${step.tokens.toLocaleString('fr-FR')} tok</div>`;
+  item.innerHTML = `
+    <div class="feed-icon">${step.icon}</div>
+    <div class="feed-body">
+      <div class="feed-label src-${step.src}">${step.label}</div>
+      <div class="feed-desc">${step.desc}</div>
+    </div>${tokLabel}`;
+  feed.appendChild(item);
+  requestAnimationFrame(() => requestAnimationFrame(() => item.classList.add('visible')));
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function addFlowItem(promptTok, responseTok, htmlKo) {
+  const feed = document.getElementById('feed');
+  const item = document.createElement('div');
+  item.className = 'feed-item src-flow';
+  const pL = promptTok >= 1000 ? Math.round(promptTok/1000) + ' k tok' : promptTok + ' tok';
+  const rL = responseTok >= 1000 ? Math.round(responseTok/1000) + ' k tok' : responseTok + ' tok';
+  item.innerHTML = `
+    <div class="flow-row">
+      <span class="flow-chip prompt">→ ${pL}</span>
+      <span class="flow-arrow">›</span>
+      <span class="flow-chip claude">🤖 Claude</span>
+      <span class="flow-arrow">›</span>
+      <span class="flow-chip response">← ${rL} MD</span>
+      <span class="flow-arrow">›</span>
+      <span class="flow-chip python">🐍 Python</span>
+      <span class="flow-arrow">›</span>
+      <span class="flow-chip outside">📁 ${htmlKo} HTML</span>
+    </div>
+    <div class="flow-note">Le HTML ne transite pas par le contexte LLM</div>`;
+  feed.appendChild(item);
+  requestAnimationFrame(() => requestAnimationFrame(() => item.classList.add('visible')));
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function flashDelegate() {
+  const track = document.getElementById('ctx-bar-track');
+  track.classList.add('delegating');
+  setTimeout(() => track.classList.remove('delegating'), 1600);
+}
+
+// ── Resume modal ─────────────────────────────────────────────────
+function showResumeModal(numActions, onClose) {
+  resumeCallback = onClose;
+  simPaused = true;
+  const data = RESUME_DATA[numActions];
+  document.getElementById('resume-badge').textContent  = numActions + ' actions';
+  document.getElementById('resume-prompt').textContent = data.prompt;
+  document.getElementById('resume-actions').innerHTML = data.actions.map((a, i) => `
+    <div class="modal-action">
+      <span class="modal-action-num">${String(i+1).padStart(2,'0')}.</span>
+      <div class="modal-action-body">
+        <div class="modal-action-title">✅ ${a.title}</div>
+        <div class="modal-action-meta">${a.meta}</div>
+        <div class="modal-action-desc">${a.desc}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('resume-modal').style.display = 'flex';
+}
+
+function closeResumeModal(event) {
+  if (event && event.target !== document.getElementById('resume-modal')) return;
+  document.getElementById('resume-modal').style.display = 'none';
+  simPaused = false;
+  if (resumeCallback) { resumeCallback(); resumeCallback = null; }
+}
+
+// ── Delegate popup ────────────────────────────────────────────────
+function buildPopupHTML(j) {
+  const footer = `
+    <div class="dp-footer-bar">
+      <div class="dp-progress-label-row"><span>${j.task}</span><span class="dp-pct">0%</span></div>
+      <div class="dp-progress-track"><div class="dp-progress-bar" id="dp-bar"></div></div>
+    </div>`;
+
+  if (j.type === 'cocktail') return `
+    <div class="dp-header"><span style="font-size:28px">🍹</span><span class="dp-title">${j.title}</span></div>
+    <div class="dp-cocktail-scene">
+      <div class="dp-big-claude">🤖</div>
+      <div class="dp-big-glass">🍹</div>
+      <div class="dp-cocktail-quote">
+        <div class="dp-quote-text">${j.quote}</div>
+        <div class="dp-quote-attr">${j.attr}</div>
+        <div class="dp-aside">${j.aside}</div>
+      </div>
+    </div>${footer}`;
+
+  if (j.type === 'chat') return `
+    <div class="dp-header"><span style="font-size:28px">💬</span><span class="dp-title">${j.title}</span></div>
+    <div class="dp-chat-scene">
+      <div class="dp-chat-header">Pendant que Python tourne en arrière-plan…</div>
+      <div class="dp-msg dp-msg-l" style="animation-delay:0s">
+        <div class="dp-msg-av">🤖</div>
+        <div class="dp-msg-col">
+          <div class="dp-msg-name">Claude</div>
+          <div class="dp-msg-bubble">Alors, comment tu vas ? Toujours à générer du HTML à la main ?</div>
+        </div>
+      </div>
+      <div class="dp-msg dp-msg-r" style="animation-delay:1.4s">
+        <div class="dp-msg-av"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" width="32" height="32" style="flex-shrink:0"><rect width="41" height="41" rx="8" fill="#000"/><path fill="#fff" d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835 9.964 9.964 0 0 0-6.112-2.673 10.079 10.079 0 0 0-9.614 6.977 9.967 9.967 0 0 0-6.664 4.834 10.08 10.08 0 0 0 1.24 11.817 9.965 9.965 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 6.111 2.672 10.079 10.079 0 0 0 9.614-6.976 9.967 9.967 0 0 0 6.663-4.834 10.079 10.079 0 0 0-1.238-11.818zm-9.002 12.644a7.496 7.496 0 0 1-4.799 2.523 52.141 52.141 0 0 1-.96-1.626l-6.95-12.024a52.808 52.808 0 0 1 3.21-.184 52.18 52.18 0 0 1 3.196.184l-3.386 5.859 3.26 5.644a7.498 7.498 0 0 1 5.429-.376zm1.856-3.855a7.497 7.497 0 0 1-1.007 4.816l-3.26-5.64 3.187-5.518a52.194 52.194 0 0 1 1.08 6.342zm-17.658 5.88a7.497 7.497 0 0 1-4.8-2.524 7.498 7.498 0 0 1 5.43.376l3.26-5.644-3.385-5.859a52.18 52.18 0 0 1 3.195-.184 52.808 52.808 0 0 1 3.21.184l-6.95 12.024a52.14 52.14 0 0 1-.96 1.626 7.498 7.498 0 0 1-5.88-.003zm-3.857-8.732a7.497 7.497 0 0 1 1.007-4.816l3.187 5.518-3.26 5.64a7.497 7.497 0 0 1-.934-6.342zm5.43-11.82a7.497 7.497 0 0 1 4.799-2.524 52.14 52.14 0 0 1 .96 1.626l3.386 5.859a52.808 52.808 0 0 1-3.21.184 52.18 52.18 0 0 1-3.196-.184l3.386-5.859-3.26-5.644a7.498 7.498 0 0 1-5.865-.458zm14.415 5.88h-.001l-3.187 5.518-3.187-5.518 3.187-5.518 3.187 5.518zm-7.647-6.256a52.194 52.194 0 0 1-3.21.184 52.808 52.808 0 0 1-3.196-.184l3.196-5.534 3.21 5.534z"/></svg></div>
+        <div class="dp-msg-col">
+          <div class="dp-msg-name" style="text-align:right">GPT-4o</div>
+          <div class="dp-msg-bubble">…c'est la méthode standard, non ? On envoie le HTML complet à chaque itération.</div>
+        </div>
+      </div>
+      <div class="dp-msg dp-msg-l" style="animation-delay:3s">
+        <div class="dp-msg-av">🤖</div>
+        <div class="dp-msg-col">
+          <div class="dp-msg-name">Claude</div>
+          <div class="dp-msg-bubble">Ah. Moi j'ai un skill Python qui s'occupe de ça. Je reçois que le diff en Markdown. 😎</div>
+        </div>
+      </div>
+      <div class="dp-msg dp-msg-r" style="animation-delay:4.8s">
+        <div class="dp-msg-av"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" width="32" height="32" style="flex-shrink:0"><rect width="41" height="41" rx="8" fill="#000"/><path fill="#fff" d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835 9.964 9.964 0 0 0-6.112-2.673 10.079 10.079 0 0 0-9.614 6.977 9.967 9.967 0 0 0-6.664 4.834 10.08 10.08 0 0 0 1.24 11.817 9.965 9.965 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 6.111 2.672 10.079 10.079 0 0 0 9.614-6.976 9.967 9.967 0 0 0 6.663-4.834 10.079 10.079 0 0 0-1.238-11.818zm-9.002 12.644a7.496 7.496 0 0 1-4.799 2.523 52.141 52.141 0 0 1-.96-1.626l-6.95-12.024a52.808 52.808 0 0 1 3.21-.184 52.18 52.18 0 0 1 3.196.184l-3.386 5.859 3.26 5.644a7.498 7.498 0 0 1 5.429-.376zm1.856-3.855a7.497 7.497 0 0 1-1.007 4.816l-3.26-5.64 3.187-5.518a52.194 52.194 0 0 1 1.08 6.342zm-17.658 5.88a7.497 7.497 0 0 1-4.8-2.524 7.498 7.498 0 0 1 5.43.376l3.26-5.644-3.385-5.859a52.18 52.18 0 0 1 3.195-.184 52.808 52.808 0 0 1 3.21.184l-6.95 12.024a52.14 52.14 0 0 1-.96 1.626 7.498 7.498 0 0 1-5.88-.003zm-3.857-8.732a7.497 7.497 0 0 1 1.007-4.816l3.187 5.518-3.26 5.64a7.497 7.497 0 0 1-.934-6.342zm5.43-11.82a7.497 7.497 0 0 1 4.799-2.524 52.14 52.14 0 0 1 .96 1.626l3.386 5.859a52.808 52.808 0 0 1-3.21.184 52.18 52.18 0 0 1-3.196-.184l3.386-5.859-3.26-5.644a7.498 7.498 0 0 1-5.865-.458zm14.415 5.88h-.001l-3.187 5.518-3.187-5.518 3.187-5.518 3.187 5.518zm-7.647-6.256a52.194 52.194 0 0 1-3.21.184 52.808 52.808 0 0 1-3.196-.184l3.196-5.534 3.21 5.534z"/></svg></div>
+        <div class="dp-msg-col">
+          <div class="dp-msg-name" style="text-align:right">GPT-4o</div>
+          <div class="dp-msg-bubble">…</div>
+        </div>
+      </div>
+    </div>${footer}`;
+
+  if (j.type === 'agentforce') return `
+    <div class="dp-header"><span style="font-size:28px">📖</span><span class="dp-title">${j.title}</span></div>
+    <div class="dp-af-scene">
+      <div class="dp-af-left">
+        <div class="dp-af-claude">🤖</div>
+        <div class="dp-af-expr" id="af-expr">😐</div>
+        <div class="dp-af-comment">"…bon."</div>
+      </div>
+      <div class="dp-af-doc">
+        <div class="dp-af-doc-header">
+          <span class="dp-af-logo">⚡</span>
+          <span class="dp-af-doc-title">Salesforce AgentForce</span>
+          <span class="dp-af-doc-sub">Getting Started v3.2</span>
+        </div>
+        <div class="dp-af-doc-body">
+          <div class="dp-af-line" style="animation-delay:0.3s">Step 1: Enable AgentForce in your Salesforce org settings…</div>
+          <div class="dp-af-line" style="animation-delay:0.9s">Step 2: Configure Einstein AI in Setup > AI Features > Enable…</div>
+          <div class="dp-af-line" style="animation-delay:1.5s">Step 3: Create APEX triggers for your Agent Flow pipeline…</div>
+          <div class="dp-af-line warn" style="animation-delay:2.2s">Step 4: Contact your Salesforce rep for Enterprise pricing 💸</div>
+          <div class="dp-af-line" style="animation-delay:2.9s">Step 5: Schedule a 4-hour onboarding call with the Success team…</div>
+          <div class="dp-af-line" style="animation-delay:3.6s">Step 6: Submit a support ticket to unlock the API endpoint…</div>
+        </div>
+      </div>
+    </div>
+    <div class="dp-click-hint" style="opacity:0;transition:opacity 0.5s;text-align:center;padding:8px 16px 4px;font-size:12px;color:#4a5568;font-style:italic;">
+      Cliquez n'importe où pour continuer →
+    </div>
+    ${footer}`;
+}
+
+function showDelegatePopup(jokeIdx, onDone) {
+  const j = JOKES[jokeIdx % JOKES.length];
+
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'delegate-overlay';
+  document.body.appendChild(overlay);
+
+  // Popup
+  const popup = document.createElement('div');
+  popup.className = 'delegate-popup';
+  popup.innerHTML = buildPopupHTML(j);
+  document.body.appendChild(popup);
+
+  function closePopup() {
+    popup.classList.add('dp-out');
+    overlay.classList.add('fading');
+    setTimeout(() => {
+      popup.remove();
+      overlay.remove();
+      if (onDone) onDone();
+    }, 300);
+  }
+
+  // Progress bar + pct counter
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const bar = popup.querySelector('#dp-bar');
+    if (bar) {
+      bar.style.transition = 'none';
+      bar.style.width = '0%';
+      requestAnimationFrame(() => {
+        bar.style.transition = `width ${j.duration * 0.88 / 1000}s linear`;
+        requestAnimationFrame(() => { bar.style.width = '100%'; });
+      });
+    }
+    const pctEl = popup.querySelector('.dp-pct');
+    const start = performance.now();
+    function tickPct(ts) {
+      const pct = Math.min(100, Math.round((ts - start) / j.duration * 100));
+      if (pctEl) pctEl.textContent = pct + '%';
+      if (pct < 100) requestAnimationFrame(tickPct);
+    }
+    requestAnimationFrame(tickPct);
+
+    // AgentForce: change expression mid-way
+    if (j.type === 'agentforce') {
+      setTimeout(() => { const e = popup.querySelector('#af-expr'); if (e) e.textContent = '😑'; }, 2600);
+    }
+  }));
+
+  if (j.manualClose) {
+    // After duration, show click-to-close hint and wire click handlers
+    setTimeout(() => {
+      const hint = popup.querySelector('.dp-click-hint');
+      if (hint) hint.style.opacity = '1';
+      overlay.style.cursor = 'pointer';
+      popup.style.cursor   = 'pointer';
+      overlay.addEventListener('click', closePopup, { once: true });
+      popup.addEventListener('click', closePopup,   { once: true });
+    }, j.duration);
+  } else {
+    // Auto-close
+    setTimeout(closePopup, j.duration);
+  }
+}
+
+// ── Choice cards ─────────────────────────────────────────────────
+function showChoiceCards() {
+  const feed = document.getElementById('feed');
+  const section = document.createElement('div');
+  section.className = 'choice-section';
+  section.innerHTML = `
+    <div class="choice-title">✅ Fabrice choisit une amélioration à appliquer</div>
+    <div class="choice-cards">${CHOICES.map((c,i) => `
+      <div class="choice-card" id="choice-${i}" onclick="selectChoice(${i})">
+        <span class="choice-icon">${c.icon}</span>
+        <span class="choice-label">${c.label}</span>
+        <span class="choice-desc">${c.desc}</span>
+      </div>`).join('')}
+    </div>`;
+  feed.appendChild(section);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function selectChoice(i) {
+  document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('choice-' + i).classList.add('selected');
+  showToast('✓ ' + CHOICES[i].label + ' sélectionné — sera appliqué dès la prochaine session');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'notif-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3600);
+}
+
+// ── Typing indicator ──────────────────────────────────────────────
+let typingEl = null;
+const SRC_ICONS = { llm:'🤖', skill:'⚡', delegate:'🍹', user:'👤', claudemd:'📄', hook:'🪝' };
+function showTyping(src) {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+  const feed = document.getElementById('feed');
+  const el = document.createElement('div');
+  el.className = `feed-item src-${src} visible`;
+  el.innerHTML = `<div class="feed-icon">${SRC_ICONS[src]||'•'}</div><div class="feed-body"><div class="typing-dot"><span></span><span></span><span></span></div></div>`;
+  feed.appendChild(el);
+  typingEl = el;
+  feed.scrollTop = feed.scrollHeight;
+}
+function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null; } }
+
+function animateCounter(from, to, durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    updateStats((Math.round(from + (to - from) * t)) / TOTAL_TOKENS * 100, Math.round(from + (to - from) * t));
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ── Step player ───────────────────────────────────────────────────
+function playStep(index) {
+  if (simPaused) return;
+  if (index >= STEPS.length) {
+    running = false;
+    document.getElementById('btn-play').textContent = '✓ Terminé';
+    document.getElementById('btn-play').classList.remove('running');
+    return;
+  }
+
+  const step  = STEPS[index];
+  const delay = SPEED_MS[speed];
+  showTyping(step.src);
+
+  timer = setTimeout(() => {
+    hideTyping();
+    addFeedItem(step);
+
+    if (step.delegate) {
+      flashDelegate();
+      updateExchange(null, null, step.htmlKo);
+      const llmIdx = findLastLlmBefore(index);
+      const llmStep = llmIdx >= 0 ? STEPS[llmIdx] : null;
+
+      showDelegatePopup(step.joke, () => {
+        if (llmStep) addFlowItem(llmStep.promptTok, llmStep.tokens, step.htmlKo);
+        currentStep = index + 1;
+        timer = setTimeout(() => playStep(currentStep), delay * 0.4);
+      });
+      return;
+    }
+
+    if (step.tokens > 0) {
+      addSegment(step);
+      const prev = totalTokens;
+      totalTokens += step.tokens;
+      totalPct    += step.pct;
+      animateCounter(prev, totalTokens, Math.min(delay * 0.6, 400));
+    }
+
+    if (step.promptTok) updateExchange(step.promptTok, step.tokens, null);
+
+    currentStep = index + 1;
+
+    if (step.showResume) {
+      timer = setTimeout(() => {
+        showResumeModal(step.showResume, () => {
+          timer = setTimeout(() => playStep(currentStep), delay * 0.4);
+        });
+      }, delay * 0.8);
+      return;
+    }
+
+    if (step.final) {
+      timer = setTimeout(() => showChoiceCards(), delay * 1.2);
+      running = false;
+      document.getElementById('btn-play').textContent = '✓ Terminé';
+      document.getElementById('btn-play').classList.remove('running');
+      return;
+    }
+
+    timer = setTimeout(() => playStep(currentStep), delay);
+  }, Math.max(150, delay * 0.45));
+}
+
+function findLastLlmBefore(idx) {
+  for (let i = idx - 1; i >= 0; i--) {
+    if (STEPS[i].src === 'llm' && STEPS[i].promptTok) return i;
+  }
+  return -1;
+}
+
+// ── Controls ──────────────────────────────────────────────────────
+function startSim() {
+  if (running || simPaused) return;
+  if (currentStep >= STEPS.length) resetSim();
+  running = true;
+  document.getElementById('btn-play').textContent = '⏳ En cours…';
+  document.getElementById('btn-play').classList.add('running');
+  playStep(currentStep);
+}
+
+function resetSim() {
+  clearTimeout(timer);
+  hideTyping();
+  running = false; simPaused = false; resumeCallback = null;
+  currentStep = 0; totalTokens = 0; totalPct = 0; topOffset = 0;
+
+  document.getElementById('resume-modal').style.display = 'none';
+  document.querySelectorAll('.delegate-popup, .delegate-overlay').forEach(e => e.remove());
+
+  const track = document.getElementById('ctx-bar-track');
+  track.querySelectorAll('.ctx-segment').forEach(s => s.remove());
+  track.className = 'ctx-bar-track';
+  document.getElementById('ctx-available').style.cssText = 'height:100%;opacity:1';
+  document.getElementById('exchange-indicator').style.display = 'none';
+  updateStats(0, 0);
+
+  document.getElementById('feed').innerHTML = '<div class="feed-placeholder">Appuie sur <strong>▶ Simuler</strong> pour démarrer</div>';
+  document.getElementById('btn-play').textContent = '▶ Simuler une session';
+  document.getElementById('btn-play').classList.remove('running');
+}
+
+function setSpeed(s) {
+  speed = s;
+  document.querySelectorAll('.speed-toggle button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sp-' + (s === 'normal' ? 'norm' : s)).classList.add('active');
+}
+
+buildRuler();
+updateStats(0, 0);
+</script>
+
+<script>
+function setTheme(theme) {
+  const stylesheet = document.getElementById('theme-stylesheet');
+  if (!stylesheet) return;
+  let href = stylesheet.getAttribute('href');
+  let newHref = theme === 'projector'
+    ? (href.includes('-projector.css') ? href : href.replace('.css', '-projector.css'))
+    : href.replace('-projector.css', '.css');
+  if (newHref !== href) stylesheet.setAttribute('href', newHref);
+}
+window.addEventListener('message', e => { if (e.data?.theme) setTheme(e.data.theme); });
+document.addEventListener('DOMContentLoaded', () => {
+  const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+  setTheme(isProjector ? 'projector' : 'normal');
+  const toggle = window.parent.document.getElementById('projector-toggle');
+  if (toggle) toggle.checked = isProjector;
+});
+</script>
+
+</body>
+</html>

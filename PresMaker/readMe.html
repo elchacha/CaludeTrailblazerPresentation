@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PresMaker — Documentation</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg2: #16213e;
+      --bg3: #0f3460;
+      --panel: #1e1e2e;
+      --border: #2a2a4a;
+      --text: #cdd6f4;
+      --text-muted: #9399b2;
+      --accent: #89b4fa;
+      --accent2: #cba6f7;
+      --green: #a6e3a1;
+      --yellow: #f9e2af;
+      --red: #f38ba8;
+      --orange: #fab387;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar nav ── */
+    nav {
+      width: 230px;
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 0 40px;
+    }
+
+    nav .logo {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    nav .logo h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
+    nav .logo p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    nav a {
+      display: block;
+      padding: 7px 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+
+    nav a:hover { color: var(--text); background: var(--panel); }
+    nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--panel); }
+
+    nav .nav-section {
+      padding: 16px 20px 6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* ── Main content ── */
+    main {
+      flex: 1;
+      max-width: 860px;
+      padding: 48px 56px;
+      overflow-y: auto;
+    }
+
+    section {
+      margin-bottom: 56px;
+      scroll-margin-top: 24px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent2);
+      margin: 28px 0 12px;
+    }
+
+    p { margin-bottom: 12px; font-size: 14px; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Steps ── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-body h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .step-body p { margin: 0 0 8px; font-size: 13px; color: var(--text-muted); }
+
+    /* ── Code ── */
+    code {
+      background: var(--bg3);
+      color: var(--green);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 12px;
+    }
+
+    pre {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+
+    pre code {
+      background: none;
+      color: var(--green);
+      padding: 0;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--bg3);
+      color: var(--accent);
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--panel); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-cli { background: #1e2a3a; color: var(--accent); }
+    .badge-ui  { background: #2a1e3a; color: var(--accent2); }
+
+    /* ── Prereqs ── */
+    .prereq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .prereq-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+
+    .prereq-item .icon { font-size: 18px; }
+
+    .prereq-item .label { font-weight: 600; color: var(--text); }
+    .prereq-item .note { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Directive tags ── */
+    .at-tag {
+      display: inline-block;
+      background: rgba(203,166,247,0.12);
+      border: 1px solid rgba(203,166,247,0.3);
+      color: var(--accent2);
+      border-radius: 4px;
+      padding: 1px 8px;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 12px;
+    }
+
+    /* ── File tree ── */
+    .file-tree {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .file-tree .dir  { color: var(--accent); }
+    .file-tree .file { color: var(--text); }
+    .file-tree .note { color: var(--text-muted); font-style: italic; }
+
+    /* ── Theme pills ── */
+    .theme-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .theme-pill {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+
+    .theme-pill.tech   { background: #0d1a2e; color: var(--accent); border-color: var(--accent); }
+    .theme-pill.biz    { background: #1a1a0d; color: var(--yellow); border-color: var(--yellow); }
+    .theme-pill.fun    { background: #2a0d1a; color: var(--red);    border-color: var(--red); }
+    .theme-pill.class  { background: #1a1a1a; color: var(--text-muted); }
+
+    /* ── Example block ── */
+    .example-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+
+    .example-box h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <h1>PresMaker</h1>
+    <p>Idée → Présentation Reveal.js</p>
+  </div>
+
+  <div class="nav-section">Démarrage</div>
+  <a href="#prerequis">Prérequis</a>
+  <a href="#modes">Deux modes</a>
+
+  <div class="nav-section">Workflow CLI</div>
+  <a href="#etape1">1 — Créer le plan</a>
+  <a href="#etape2">2 — Affiner le plan</a>
+  <a href="#etape3">3 — Générer les slides</a>
+  <a href="#etape4">4 — Générer la présentation</a>
+
+  <div class="nav-section">Référence</div>
+  <a href="#structure">Structure des fichiers</a>
+  <a href="#themes">Thèmes Reveal.js</a>
+  <a href="#scripts">Scripts utilitaires</a>
+  <a href="#exemple">Exemple complet</a>
+</nav>
+
+<main>
+
+  <section id="prerequis">
+    <h2>Prérequis</h2>
+    <div class="prereq-list">
+      <div class="prereq-item">
+        <span class="icon">⌨️</span>
+        <div>
+          <div class="label"><a href="https://claude.ai/code">Claude Code</a> — CLI <code>claude</code></div>
+          <div class="note">Requis pour les slash commands /planMaker, /draft, /present</div>
+        </div>
+      </div>
+      <div class="prereq-item">
+        <span class="icon">🐍</span>
+        <div>
+          <div class="label">Python 3.10+</div>
+          <div class="note">Pour les scripts de génération</div>
+        </div>
+      </div>
+      <div class="prereq-item">
+        <span class="icon">🌐</span>
+        <div>
+          <div class="label">Flask — <code>pip install flask</code></div>
+          <div class="note">Uniquement pour le mode UI (interface web)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="modes">
+    <h2>Deux modes d'utilisation</h2>
+
+    <h3><span class="badge badge-cli">CLI</span> Mode Claude Code</h3>
+    <p>Directement dans le terminal Claude Code, via des slash commands. Aucune dépendance supplémentaire hormis Python.</p>
+
+    <h3><span class="badge badge-ui">UI</span> Mode interface web</h3>
+    <p>Un serveur Flask local avec une interface graphique pour gérer les projets, éditer les slides et générer la présentation.</p>
+    <pre><code>cd ui
+python server.py
+# → http://localhost:8888</code></pre>
+  </section>
+
+  <section id="etape1">
+    <h2>Étape 1 — Créer le plan</h2>
+    <pre><code>/planMaker 5</code></pre>
+    <p>Claude pose 4 questions interactivement :</p>
+    <table>
+      <tbody>
+        <tr><td><strong>Sujet</strong></td><td>De quoi parle la présentation ?</td></tr>
+        <tr><td><strong>Public</strong></td><td>Collègues techniques, direction, étudiants…</td></tr>
+        <tr><td><strong>Objectif</strong></td><td>Convaincre, informer, former, divertir…</td></tr>
+        <tr><td><strong>Ton</strong></td><td>Sérieux, décontracté, humoristique, inspirant…</td></tr>
+      </tbody>
+    </table>
+    <p>Génère ensuite <code>work/&lt;slug&gt;/plan.md</code> et ouvre le dossier dans l'Explorateur.</p>
+  </section>
+
+  <section id="etape2">
+    <h2>Étape 2 — Affiner le plan</h2>
+    <p>Ouvre <code>work/&lt;slug&gt;/plan.md</code> et modifie-le librement. Tu peux enrichir le contenu avec des directives <code>@xxx@</code> :</p>
+
+    <table>
+      <thead><tr><th>Directive</th><th>Effet</th></tr></thead>
+      <tbody>
+        <tr><td><span class="at-tag">@développe avec un exemple concret@</span></td><td>Ajoute un exemple illustratif</td></tr>
+        <tr><td><span class="at-tag">@ajoute de l'humour@</span></td><td>Injecte une touche humoristique</td></tr>
+        <tr><td><span class="at-tag">@donne des chiffres@</span></td><td>Illustre avec des statistiques</td></tr>
+        <tr><td><span class="at-tag">@crée un visuel ASCII@</span></td><td>Génère un diagramme en ASCII art</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:13px; color: var(--text-muted);">Les directives <code>@xxx@</code> sont supprimées du contenu final après traitement.</p>
+  </section>
+
+  <section id="etape3">
+    <h2>Étape 3 — Générer les slides</h2>
+    <pre><code>/draft
+/draft max=12
+/draft max=12 html=true</code></pre>
+
+    <table>
+      <thead><tr><th>Option</th><th>Effet</th></tr></thead>
+      <tbody>
+        <tr><td><em>(aucune)</em></td><td>Génère tous les slides nécessaires</td></tr>
+        <tr><td><code>max=N</code></td><td>Limite à N slides</td></tr>
+        <tr><td><code>html=true</code></td><td>Génère aussi une <code>preview.html</code> navigable (sans serveur)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Génère les fichiers dans <code>work/&lt;slug&gt;/slides/slide-XX.md</code>. Relis-les, retouche-les, ajoute des <code>@xxx@</code> supplémentaires si besoin.</p>
+  </section>
+
+  <section id="etape4">
+    <h2>Étape 4 — Générer la présentation</h2>
+    <pre><code>/present
+/present --interactive
+/present --slug=mon-projet prompt="thème sombre, slides aérées"
+/present --slide=03</code></pre>
+
+    <table>
+      <thead><tr><th>Option</th><th>Effet</th></tr></thead>
+      <tbody>
+        <tr><td><em>(aucune)</em></td><td>Détecte le projet, génère directement</td></tr>
+        <tr><td><code>--interactive</code> / <code>-i</code></td><td>Mode guidé : choisit le projet et le style interactivement</td></tr>
+        <tr><td><code>--slug=&lt;slug&gt;</code></td><td>Cible un projet précis</td></tr>
+        <tr><td><code>prompt="..."</code></td><td>Instruction globale de style (thème, ton, CSS)</td></tr>
+        <tr><td><code>--slide=XX</code></td><td>Régénère un seul slide dans <code>index.html</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Résultat : <code>work/&lt;slug&gt;/presentation/index.html</code> — ouvrir dans un navigateur.</p>
+  </section>
+
+  <section id="structure">
+    <h2>Structure des fichiers</h2>
+    <div class="file-tree">
+      <span class="dir">work/&lt;slug&gt;/</span><br>
+      ├── <span class="file">plan.md</span>         <span class="note">← Étape 1 : plan de la présentation</span><br>
+      ├── <span class="file">theme.json</span>      <span class="note">← Étape 4 : thème Reveal.js généré par Claude</span><br>
+      ├── <span class="dir">slides/</span><br>
+      │&nbsp;&nbsp; ├── <span class="file">slide-01.md</span>  <span class="note">← Étape 3 : un fichier par slide</span><br>
+      │&nbsp;&nbsp; ├── <span class="file">slide-02.md</span><br>
+      │&nbsp;&nbsp; ├── <span class="file">preview.html</span> <span class="note">← (optionnel, avec /draft html=true)</span><br>
+      │&nbsp;&nbsp; └── <span class="file">...</span><br>
+      └── <span class="dir">presentation/</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp; ├── <span class="file">index.html</span>  <span class="note">← Étape 4 : présentation finale Reveal.js</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp; └── <span class="file">slides-final.md</span>
+    </div>
+
+    <h3>Format d'un slide (<code>slide-XX.md</code>)</h3>
+    <pre><code>---
+numero: 03
+titre: Titre du slide
+type: contenu
+partie: 1
+---
+
+# Titre du slide
+
+- Point clé 1
+- Point clé 2
+- Point clé 3
+
+&lt;!-- notes: Notes présentateur --&gt;</code></pre>
+
+    <p>Types : <code>intro</code> · <code>agenda</code> · <code>contenu</code> · <code>transition</code> · <code>conclusion</code> · <code>final</code></p>
+  </section>
+
+  <section id="themes">
+    <h2>Thèmes Reveal.js disponibles</h2>
+    <div class="theme-grid">
+      <span class="theme-pill tech">night</span>
+      <span class="theme-pill tech">black</span>
+      <span class="theme-pill biz">moon</span>
+      <span class="theme-pill biz">white</span>
+      <span class="theme-pill fun">dracula</span>
+      <span class="theme-pill fun">blood</span>
+      <span class="theme-pill class">beige</span>
+      <span class="theme-pill class">simple</span>
+      <span class="theme-pill class">serif</span>
+      <span class="theme-pill class">sky</span>
+      <span class="theme-pill class">solarized</span>
+      <span class="theme-pill class">league</span>
+    </div>
+
+    <table>
+      <thead><tr><th>Usage</th><th>Thèmes recommandés</th></tr></thead>
+      <tbody>
+        <tr><td>Tech, IA, dark mode</td><td><code>night</code>, <code>black</code></td></tr>
+        <tr><td>Business, sobre</td><td><code>moon</code>, <code>white</code></td></tr>
+        <tr><td>Décalé, humoristique</td><td><code>dracula</code>, <code>blood</code></td></tr>
+        <tr><td>Pédagogique, classique</td><td><code>beige</code>, <code>simple</code>, <code>serif</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="scripts">
+    <h2>Scripts utilitaires</h2>
+    <table>
+      <thead><tr><th>Script</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>scripts/gen_presentation.py work/&lt;slug&gt;/</code></td>
+          <td>Génère <code>index.html</code> depuis les slides + <code>theme.json</code></td>
+        </tr>
+        <tr>
+          <td><code>scripts/gen_preview.py work/&lt;slug&gt;/slides/</code></td>
+          <td>Génère <code>preview.html</code> pour prévisualiser les slides</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="exemple">
+    <h2>Exemple complet</h2>
+    <div class="example-box">
+      <h4>Flux typique</h4>
+      <pre style="background:none; border:none; padding:0; margin:0;"><code style="color: var(--text);">/planMaker 5
+<span style="color:var(--text-muted)"># → réponds aux 4 questions</span>
+
+<span style="color:var(--text-muted)"># Édite work/mon-sujet/plan.md si besoin</span>
+
+/draft max=10
+<span style="color:var(--text-muted)"># → 10 slides créés dans work/mon-sujet/slides/</span>
+
+/present prompt="thème sombre, peu de texte par slide"
+<span style="color:var(--text-muted)"># → ouvre work/mon-sujet/presentation/index.html</span></code></pre>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // Highlight active nav link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  navLinks.forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>

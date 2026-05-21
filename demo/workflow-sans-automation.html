@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Sans Automation</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/workflow-sans-automation.css">
+</head>
+<body>
+
+<h1>🚫 Sans Automation — Dérive des tokens</h1>
+<p class="subtitle">Sans skills, hooks ni agents : chaque réponse contient le HTML complet — le contexte déborde en 3 cycles</p>
+
+<div class="controls">
+  <button class="btn primary" id="btn-play" onclick="startSim()">▶ Simuler une session</button>
+  <button class="btn" id="btn-reset" onclick="resetSim()">↺ Recommencer</button>
+  <span class="speed-label">Vitesse :</span>
+  <div class="speed-toggle">
+    <button id="sp-slow" onclick="setSpeed('slow')">Lente</button>
+    <button id="sp-norm" class="active" onclick="setSpeed('normal')">Normale</button>
+    <button id="sp-fast" onclick="setSpeed('fast')">Rapide</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="panel">
+    <div class="panel-header feed-hdr">📥 Fil de session — ce qui entre dans le contexte</div>
+    <div class="feed" id="feed">
+      <div class="feed-placeholder">Appuie sur <strong>▶ Simuler</strong> pour démarrer</div>
+    </div>
+  </div>
+
+  <div class="ctx-right">
+    <div class="panel">
+      <div class="panel-header ctx-hdr">🪟 Fenêtre de contexte LLM</div>
+
+      <div class="ctx-stats">
+        <span class="ctx-stats-label">Utilisé</span>
+        <span class="ctx-stats-count" id="ctx-pct-display">0 %</span>
+        <span class="ctx-pct-label" id="ctx-k-display">0 k tokens</span>
+      </div>
+
+      <div class="ctx-window-wrap">
+        <div class="ctx-window-label">
+          0 tokens <span id="ctx-window-size">200 000 tokens max</span>
+        </div>
+        <div class="ctx-bar-track" id="ctx-bar-track">
+          <div class="ctx-available" id="ctx-available" style="height:100%">disponible</div>
+          <div class="ctx-ruler" id="ctx-ruler"></div>
+        </div>
+        <div class="ctx-tokens-row">
+          <span id="ctx-tokens-used">0</span>
+          <span>/ 200 000 tokens</span>
+        </div>
+      </div>
+
+      <div class="ctx-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>CLAUDE.md + Memory</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div>Inputs utilisateur</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div>Réponses LLM</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4a5568"></div>Cache prompt</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STEPS = [
+  {
+    src: 'claudemd',
+    icon: '📄',
+    label: 'CLAUDE.md + Memory chargés',
+    desc: 'Instructions projet + 8 fichiers mémoire + system-reminders injectés',
+    tokens: 15000,
+    pct: 7.5,
+    color: '#7c3aed',
+  },
+  {
+    src: 'user',
+    icon: '👤',
+    label: '/plan — démarrage du projet',
+    desc: 'Objectifs de session, fichiers concernés, structure attendue du HTML',
+    tokens: 800,
+    pct: 0.4,
+    color: '#58a6ff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse Claude — HTML 120 ko complet',
+    desc: '⚠️ Claude renvoie le fichier HTML entier dans sa réponse : 60 000 tokens d\'un coup',
+    tokens: 60000,
+    pct: 30,
+    color: '#3fb950',
+    badge: { text: '120 ko', cls: 'warn' },
+  },
+  {
+    src: 'cache',
+    icon: '💾',
+    label: 'Cache prompt écrit',
+    desc: 'Tout le contexte est mis en cache — le compteur sirote un cocktail en attendant',
+    tokens: 1500,
+    pct: 0.75,
+    color: '#4a5568',
+  },
+  {
+    src: 'user',
+    icon: '👤',
+    label: 'Fabrice relit 🍹 — modification demandée',
+    desc: 'Ajout d\'une section intro et ajustement des couleurs',
+    tokens: 350,
+    pct: 0.18,
+    color: '#58a6ff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse Claude — HTML 123 ko complet',
+    desc: '⚠️ Claude retraite TOUT depuis le début — 62 000 tokens supplémentaires. Contexte à 70%',
+    tokens: 62000,
+    pct: 31,
+    color: '#3fb950',
+    badge: { text: '123 ko', cls: 'warn' },
+  },
+  {
+    src: 'cache',
+    icon: '💾',
+    label: 'Cache mis à jour',
+    desc: 'Second cache écrit — on reprend le cocktail',
+    tokens: 1500,
+    pct: 0.75,
+    color: '#4a5568',
+  },
+  {
+    src: 'user',
+    icon: '👤',
+    label: 'Fabrice relit 🍹 — encore une modification',
+    desc: 'Correction d\'un bug d\'affichage, ajout d\'une animation CSS',
+    tokens: 300,
+    pct: 0.15,
+    color: '#58a6ff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse Claude — HTML 122 ko complet',
+    desc: '🚨 61 000 tokens supplémentaires — CONTEXTE DÉPASSÉ à 101%',
+    tokens: 61000,
+    pct: 30.5,
+    color: '#3fb950',
+    badge: { text: '122 ko', cls: 'danger' },
+    overflow: true,
+  },
+];
+
+let speed = 'normal';
+let running = false;
+let currentStep = 0;
+let totalTokens = 0;
+let totalPct = 0;
+let topOffset = 0;
+let timer = null;
+
+const TOTAL_TOKENS = 200000;
+const BAR_HEIGHT = 480;
+const SPEED_MS = { slow: 1800, normal: 900, fast: 300 };
+
+function buildRuler() {
+  const ruler = document.getElementById('ctx-ruler');
+  ruler.innerHTML = '';
+  [25, 50, 75, 100].forEach(pct => {
+    const tick = document.createElement('div');
+    tick.className = 'ctx-ruler-tick';
+    tick.style.top = (pct / 100 * BAR_HEIGHT - 1) + 'px';
+    tick.textContent = pct + '%';
+    ruler.appendChild(tick);
+  });
+}
+
+function updateStats(pct, tokens) {
+  const pctEl  = document.getElementById('ctx-pct-display');
+  const kEl    = document.getElementById('ctx-k-display');
+  const usedEl = document.getElementById('ctx-tokens-used');
+  const track  = document.getElementById('ctx-bar-track');
+  const avail  = document.getElementById('ctx-available');
+
+  pctEl.textContent  = Math.round(pct) + ' %';
+  kEl.textContent    = Math.round(tokens / 1000) + ' k tokens';
+  usedEl.textContent = tokens.toLocaleString('fr-FR') + ' tokens';
+
+  const dangerCls = pct >= 90 ? 'danger' : '';
+  const warnCls   = pct >= 75 ? 'warn'   : '';
+  const stateCls  = dangerCls || warnCls;
+  pctEl.className  = 'ctx-stats-count ' + stateCls;
+  usedEl.className = stateCls;
+
+  if (!track.classList.contains('overflow')) {
+    track.className = 'ctx-bar-track ' + stateCls;
+  }
+
+  const availPx = Math.max(0, BAR_HEIGHT * (1 - pct / 100));
+  avail.style.height  = availPx + 'px';
+  avail.style.opacity = availPx < 30 ? '0' : '1';
+}
+
+function addSegment(step) {
+  const track = document.getElementById('ctx-bar-track');
+  const cappedPct = Math.min(totalPct + step.pct, 100) - Math.min(totalPct, 100);
+  const segPx = cappedPct / 100 * BAR_HEIGHT;
+  if (segPx <= 0) return;
+
+  const seg = document.createElement('div');
+  seg.className = 'ctx-segment';
+  seg.style.cssText = `top:${topOffset}px; height:0; background:${step.color}; opacity:0.85;`;
+
+  const lbl = document.createElement('div');
+  lbl.className = 'ctx-segment-label';
+  lbl.textContent = step.label;
+  seg.appendChild(lbl);
+
+  track.insertBefore(seg, document.getElementById('ctx-available'));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    seg.style.height = segPx + 'px';
+    if (segPx >= 22) lbl.style.display = 'block';
+  }));
+  topOffset += segPx;
+}
+
+function addFeedItem(step) {
+  const feed = document.getElementById('feed');
+  feed.querySelector('.feed-placeholder')?.remove();
+
+  const item = document.createElement('div');
+  item.className = `feed-item src-${step.src}`;
+
+  const badgeHtml = step.badge
+    ? `<div class="feed-badge ${step.badge.cls}">${step.badge.text}</div>` : '';
+
+  item.innerHTML = `
+    <div class="feed-icon">${step.icon}</div>
+    <div class="feed-body">
+      <div class="feed-label src-${step.src}">${step.label}</div>
+      <div class="feed-desc">${step.desc}</div>
+    </div>
+    ${badgeHtml}
+    <div class="feed-tokens">+${step.tokens.toLocaleString('fr-FR')} tok</div>
+  `;
+  feed.appendChild(item);
+  requestAnimationFrame(() => requestAnimationFrame(() => item.classList.add('visible')));
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function showBanqueroute() {
+  const track = document.getElementById('ctx-bar-track');
+  track.className = 'ctx-bar-track overflow';
+
+  setTimeout(() => {
+    const badge = document.createElement('div');
+    badge.className = 'ctx-overflow-badge';
+    badge.innerHTML = '💥 BANQUEROUTE<br><span style="font-size:11px;font-weight:400;letter-spacing:1px;opacity:0.9">Plus de tokens disponibles</span>';
+    track.appendChild(badge);
+  }, 650);
+
+  setTimeout(() => {
+    const feed = document.getElementById('feed');
+    const item = document.createElement('div');
+    item.className = 'feed-item src-bang';
+    item.innerHTML = `
+      <div class="feed-icon">💥</div>
+      <div class="feed-body">
+        <div class="feed-label src-bang">BANQUEROUTE — Contexte épuisé</div>
+        <div class="feed-desc">La fenêtre de contexte est pleine. Nouvelle session requise — tout l'historique est perdu.</div>
+      </div>
+      <div class="feed-tokens" style="color:var(--danger);background:#1a0000">101%</div>
+    `;
+    feed.appendChild(item);
+    requestAnimationFrame(() => requestAnimationFrame(() => item.classList.add('visible')));
+    feed.scrollTop = feed.scrollHeight;
+    showToast('💥 Banqueroute — Contexte épuisé !');
+  }, 950);
+
+  running = false;
+  document.getElementById('btn-play').textContent = '💥 Session terminée';
+  document.getElementById('btn-play').classList.remove('running');
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'notif-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3600);
+}
+
+let typingEl = null;
+function showTyping(src) {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+  const feed = document.getElementById('feed');
+  const icons = { llm:'🤖', cache:'💾', user:'👤', claudemd:'📄' };
+  const el = document.createElement('div');
+  el.className = `feed-item src-${src} visible`;
+  el.innerHTML = `
+    <div class="feed-icon">${icons[src] || '•'}</div>
+    <div class="feed-body"><div class="typing-dot"><span></span><span></span><span></span></div></div>
+  `;
+  feed.appendChild(el);
+  typingEl = el;
+  feed.scrollTop = feed.scrollHeight;
+}
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+function animateCounter(from, to, durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    const val = Math.round(from + (to - from) * t);
+    updateStats(val / TOTAL_TOKENS * 100, val);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function playStep(index) {
+  if (index >= STEPS.length) {
+    running = false;
+    document.getElementById('btn-play').textContent = '✓ Terminé';
+    document.getElementById('btn-play').classList.remove('running');
+    return;
+  }
+
+  const step  = STEPS[index];
+  const delay = SPEED_MS[speed];
+
+  showTyping(step.src);
+
+  timer = setTimeout(() => {
+    hideTyping();
+    addFeedItem(step);
+    addSegment(step);
+
+    const prevTokens = totalTokens;
+    totalTokens += step.tokens;
+    totalPct    += step.pct;
+
+    animateCounter(prevTokens, totalTokens, Math.min(delay * 0.6, 400));
+    currentStep = index + 1;
+
+    if (step.overflow) {
+      timer = setTimeout(() => showBanqueroute(), delay * 1.6);
+    } else {
+      timer = setTimeout(() => playStep(currentStep), delay);
+    }
+  }, Math.max(200, delay * 0.5));
+}
+
+function startSim() {
+  if (running) return;
+  if (currentStep >= STEPS.length) resetSim();
+  running = true;
+  document.getElementById('btn-play').textContent = '⏳ En cours…';
+  document.getElementById('btn-play').classList.add('running');
+  playStep(currentStep);
+}
+
+function resetSim() {
+  clearTimeout(timer);
+  hideTyping();
+  running = false;
+  currentStep = 0;
+  totalTokens = 0;
+  totalPct    = 0;
+  topOffset   = 0;
+
+  const track = document.getElementById('ctx-bar-track');
+  track.querySelectorAll('.ctx-segment, .ctx-overflow-badge').forEach(s => s.remove());
+  track.className = 'ctx-bar-track';
+  document.getElementById('ctx-available').style.cssText = 'height:100%;opacity:1';
+
+  updateStats(0, 0);
+
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '<div class="feed-placeholder">Appuie sur <strong>▶ Simuler</strong> pour démarrer</div>';
+
+  document.getElementById('btn-play').textContent = '▶ Simuler une session';
+  document.getElementById('btn-play').classList.remove('running');
+}
+
+function setSpeed(s) {
+  speed = s;
+  document.querySelectorAll('.speed-toggle button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sp-' + (s === 'normal' ? 'norm' : s)).classList.add('active');
+}
+
+buildRuler();
+updateStats(0, 0);
+</script>
+
+<script>
+function setTheme(theme) {
+  const stylesheet = document.getElementById('theme-stylesheet');
+  if (!stylesheet) return;
+  let href = stylesheet.getAttribute('href');
+  let newHref = theme === 'projector'
+    ? (href.includes('-projector.css') ? href : href.replace('.css', '-projector.css'))
+    : href.replace('-projector.css', '.css');
+  if (newHref !== href) stylesheet.setAttribute('href', newHref);
+}
+window.addEventListener('message', e => { if (e.data?.theme) setTheme(e.data.theme); });
+document.addEventListener('DOMContentLoaded', () => {
+  const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+  setTheme(isProjector ? 'projector' : 'normal');
+  const toggle = window.parent.document.getElementById('projector-toggle');
+  if (toggle) toggle.checked = isProjector;
+});
+</script>
+
+</body>
+</html>

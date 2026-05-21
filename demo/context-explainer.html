@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Fenêtre de Contexte</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/context-explainer.css">
+</head>
+<body>
+
+<h1>🧠 Fenêtre de Contexte</h1>
+<p class="subtitle">Comment le contexte se remplit au fil d'une session Claude Code</p>
+
+<div class="controls">
+  <button class="btn primary" id="btn-play" onclick="startSim()">▶ Simuler une session</button>
+  <button class="btn" id="btn-reset" onclick="resetSim()">↺ Recommencer</button>
+  <span class="speed-label">Vitesse :</span>
+  <div class="speed-toggle">
+    <button id="sp-slow" onclick="setSpeed('slow')">Lente</button>
+    <button id="sp-norm" class="active" onclick="setSpeed('normal')">Normale</button>
+    <button id="sp-fast" onclick="setSpeed('fast')">Rapide</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Left: Session feed -->
+  <div class="panel">
+    <div class="panel-header feed-hdr">
+      📥 Fil de session — ce qui entre dans le contexte
+    </div>
+    <div class="feed" id="feed">
+      <div style="color:var(--text-muted);font-size:13px;padding:20px;text-align:center;opacity:0.5">
+        Appuie sur <strong>▶ Simuler</strong> pour démarrer
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Context window -->
+  <div class="ctx-right">
+    <div class="panel">
+      <div class="panel-header ctx-hdr">🪟 Fenêtre de contexte LLM</div>
+
+      <!-- Stats row -->
+      <div class="ctx-stats">
+        <span class="ctx-stats-label">Utilisé</span>
+        <span class="ctx-stats-count" id="ctx-pct-display">0 %</span>
+        <span class="ctx-pct-label" id="ctx-k-display">0 k tokens</span>
+      </div>
+
+      <!-- Bar -->
+      <div class="ctx-window-wrap">
+        <div class="ctx-window-label">
+          0 tokens <span id="ctx-window-size">200 000 tokens max</span>
+        </div>
+        <div class="ctx-bar-track" id="ctx-bar-track">
+          <!-- segments injected by JS -->
+          <div class="ctx-available" id="ctx-available" style="height:100%">
+            disponible
+          </div>
+          <!-- ruler -->
+          <div class="ctx-ruler" id="ctx-ruler"></div>
+        </div>
+        <div class="ctx-tokens-row">
+          <span id="ctx-tokens-used">0</span>
+          <span>/ 200 000 tokens</span>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="ctx-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>CLAUDE.md</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-memory)"></div>Memory</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-sysrem)"></div>System-reminders</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-user)"></div>Inputs utilisateur</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-llm)"></div>Réponses LLM</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-tool)"></div>Appels d'outils</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-web)"></div>Web / données ext.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Steps data ──────────────────────────────────────────────────
+const STEPS = [
+  {
+    src: 'claudemd',
+    icon: '📄',
+    label: 'CLAUDE.md chargé',
+    desc: 'Instructions projet nouvelle, personnages, conventions narratives et règles d\'écriture…',
+    tokens: 6200,
+    pct: 12,
+    color: '#7c3aed',
+  },
+  {
+    src: 'memory',
+    icon: '🧠',
+    label: 'Memory partielle chargée',
+    desc: 'MEMORY.md + 4 fichiers .md sélectionnés — personnages, fil rouge, règles narratives…',
+    tokens: 3900,
+    pct: 8,
+    color: '#e3b341',
+  },
+  {
+    src: 'sysrem',
+    icon: '⚙️',
+    label: 'System-reminders injectés',
+    desc: 'Liste des outils, skills, deferred tools, permissions session…',
+    tokens: 5100,
+    pct: 10,
+    color: '#5a6a8a',
+  },
+  {
+    src: 'user',
+    icon: '👤',
+    label: 'Message utilisateur',
+    desc: 'Écris le chapitre 2 — point de vue de Tom Berger, architecte',
+    tokens: 280,
+    pct: 2,
+    color: '#58a6ff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse LLM',
+    desc: 'Je vais lire chapitre-1.md et le profil de Tom pour maintenir la cohérence.',
+    tokens: 380,
+    pct: 3,
+    color: '#3fb950',
+  },
+  {
+    src: 'tool',
+    icon: '🔧',
+    label: 'Read(chapitre-1.md)',
+    desc: 'Résultat : 180 lignes de prose chargées dans le contexte',
+    tokens: 3200,
+    pct: 6,
+    color: '#bc8cff',
+  },
+  {
+    src: 'tool',
+    icon: '🔧',
+    label: 'Read(personnages.md)',
+    desc: 'Résultat : profil des 4 personnages + motivations chargés',
+    tokens: 1700,
+    pct: 4,
+    color: '#bc8cff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse LLM + écriture',
+    desc: 'Write(chapitre-2.md) — scène d\'ouverture Tom, bureau d\'architecte, 3 passages rédigés',
+    tokens: 2200,
+    pct: 5,
+    color: '#3fb950',
+  },
+  {
+    src: 'user',
+    icon: '👤',
+    label: 'Message utilisateur',
+    desc: 'Ajoute la scène où Tom croise Nadia devant la librairie',
+    tokens: 180,
+    pct: 2,
+    color: '#58a6ff',
+  },
+  {
+    src: 'tool',
+    icon: '🔧',
+    label: 'Read(notes-personnages.md)',
+    desc: 'Notes complémentaires sur Tom et Nadia — motivations, tension latente',
+    tokens: 4400,
+    pct: 9,
+    color: '#bc8cff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse LLM',
+    desc: 'Scène rédigée — tension latente Tom/Nadia, sous-texte sur leurs passés respectifs',
+    tokens: 3600,
+    pct: 7,
+    color: '#3fb950',
+  },
+  {
+    src: 'user',
+    icon: '👤',
+    label: 'Message utilisateur',
+    desc: 'Le dialogue Tom-Nadia sonne faux, reprends-le',
+    tokens: 220,
+    pct: 2,
+    color: '#58a6ff',
+  },
+  {
+    src: 'tool',
+    icon: '🔧',
+    label: 'Read(chapitre-2.md) — relecture croisée',
+    desc: 'Vérification de la cohérence avec le ton et les fils narratifs du chapitre 1',
+    tokens: 5400,
+    pct: 9,
+    color: '#bc8cff',
+  },
+  {
+    src: 'llm',
+    icon: '🤖',
+    label: 'Réponse LLM finale',
+    desc: 'Dialogue naturalisé — 4 répliques réécrites, sous-texte préservé, rythme amélioré',
+    tokens: 2800,
+    pct: 5,
+    color: '#3fb950',
+  },
+];
+
+// Total pct = 93% → will trigger warning and near-danger
+
+// ── State ────────────────────────────────────────────────────────
+let speed = 'normal';   // slow | normal | fast
+let running = false;
+let currentStep = 0;
+let totalTokens = 0;
+let totalPct = 0;
+let topOffset = 0;      // px from top, tracking fill position
+let timer = null;
+
+const TOTAL_TOKENS = 200_000;
+const BAR_HEIGHT = 480; // px, matches CSS
+
+// Speed → delay between steps (ms)
+const SPEED_MS = { slow: 1800, normal: 900, fast: 300 };
+
+// ── Ruler ────────────────────────────────────────────────────────
+function buildRuler() {
+  const ruler = document.getElementById('ctx-ruler');
+  ruler.innerHTML = '';
+  [25, 50, 75, 100].forEach(pct => {
+    const tick = document.createElement('div');
+    tick.className = 'ctx-ruler-tick';
+    tick.style.top = (pct / 100 * BAR_HEIGHT - 1) + 'px';
+    tick.textContent = pct + '%';
+    ruler.appendChild(tick);
+  });
+}
+
+// ── Update stats display ──────────────────────────────────────────
+function updateStats(pct, tokens) {
+  const pctEl  = document.getElementById('ctx-pct-display');
+  const kEl    = document.getElementById('ctx-k-display');
+  const usedEl = document.getElementById('ctx-tokens-used');
+  const track  = document.getElementById('ctx-bar-track');
+  const avail  = document.getElementById('ctx-available');
+
+  pctEl.textContent  = Math.round(pct) + ' %';
+  kEl.textContent    = Math.round(tokens / 1000) + ' k tokens';
+  usedEl.textContent = tokens.toLocaleString('fr-FR') + ' tokens';
+
+  // colour states
+  const warnCls   = pct >= 75 ? 'warn'   : '';
+  const dangerCls = pct >= 90 ? 'danger' : '';
+  const stateCls  = dangerCls || warnCls;
+  pctEl.className  = 'ctx-stats-count ' + stateCls;
+  usedEl.className = stateCls;
+  track.className  = 'ctx-bar-track ' + stateCls;
+
+  // available zone
+  const availPx = Math.max(0, BAR_HEIGHT * (1 - pct / 100));
+  avail.style.height = availPx + 'px';
+  avail.style.opacity = availPx < 30 ? '0' : '1';
+}
+
+// ── Add a segment ─────────────────────────────────────────────────
+function addSegment(step) {
+  const track = document.getElementById('ctx-bar-track');
+  const seg = document.createElement('div');
+  seg.className = 'ctx-segment';
+  seg.id = 'seg-' + currentStep;
+
+  const segPx = step.pct / 100 * BAR_HEIGHT;
+
+  seg.style.cssText = `
+    top: ${topOffset}px;
+    height: 0;
+    background: ${step.color};
+    opacity: 0.82;
+  `;
+
+  // label inside segment
+  const lbl = document.createElement('div');
+  lbl.className = 'ctx-segment-label';
+  lbl.textContent = step.label;
+  seg.appendChild(lbl);
+
+  // insert before available + ruler
+  track.insertBefore(seg, document.getElementById('ctx-available'));
+
+  // animate height after paint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      seg.style.height = segPx + 'px';
+      if (segPx >= 22) lbl.style.display = 'block';
+    });
+  });
+
+  topOffset += segPx;
+}
+
+// ── Add feed item ─────────────────────────────────────────────────
+function addFeedItem(step) {
+  const feed = document.getElementById('feed');
+
+  // remove placeholder if present
+  const ph = feed.querySelector('[style*="Appuie"]');
+  if (ph) ph.remove();
+
+  const item = document.createElement('div');
+  item.className = `feed-item src-${step.src}`;
+  item.innerHTML = `
+    <div class="feed-icon">${step.icon}</div>
+    <div class="feed-body">
+      <div class="feed-label src-${step.src}">${step.label}</div>
+      <div class="feed-desc">${step.desc}</div>
+    </div>
+    <div class="feed-tokens">+${step.tokens.toLocaleString('fr-FR')} tok</div>
+  `;
+  feed.appendChild(item);
+
+  // animate in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => item.classList.add('visible'));
+  });
+
+  // auto-scroll
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ── Show typing indicator ─────────────────────────────────────────
+let typingEl = null;
+function showTyping(src) {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+  const feed = document.getElementById('feed');
+  const el = document.createElement('div');
+  el.className = `feed-item src-${src} visible`;
+  el.innerHTML = `
+    <div class="feed-icon">${src === 'llm' ? '🤖' : src === 'tool' ? '🔧' : src === 'web' ? '🌐' : '👤'}</div>
+    <div class="feed-body">
+      <div class="typing-dot"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  feed.appendChild(el);
+  typingEl = el;
+  feed.scrollTop = feed.scrollHeight;
+}
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+// ── Animate token counter ─────────────────────────────────────────
+function animateCounter(from, to, durationMs) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    const val = Math.round(from + (to - from) * t);
+    const pct = val / TOTAL_TOKENS * 100;
+    updateStats(pct, val);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ── One step ──────────────────────────────────────────────────────
+function playStep(index) {
+  if (index >= STEPS.length) {
+    running = false;
+    document.getElementById('btn-play').textContent = '✓ Terminé';
+    document.getElementById('btn-play').classList.remove('running');
+    return;
+  }
+
+  const step = STEPS[index];
+  const delay = SPEED_MS[speed];
+
+  // show typing briefly then reveal item
+  showTyping(step.src);
+
+  timer = setTimeout(() => {
+    hideTyping();
+    addFeedItem(step);
+    addSegment(step);
+
+    const prevTokens = totalTokens;
+    totalTokens += step.tokens;
+    totalPct    += step.pct;
+
+    animateCounter(prevTokens, totalTokens, Math.min(delay * 0.6, 400));
+
+    currentStep = index + 1;
+    timer = setTimeout(() => playStep(currentStep), delay);
+  }, Math.max(200, delay * 0.5));
+}
+
+// ── Public controls ───────────────────────────────────────────────
+function startSim() {
+  if (running) return;
+  if (currentStep >= STEPS.length) resetSim();
+  running = true;
+  document.getElementById('btn-play').textContent = '⏳ En cours…';
+  document.getElementById('btn-play').classList.add('running');
+  playStep(currentStep);
+}
+
+function resetSim() {
+  clearTimeout(timer);
+  hideTyping();
+  running = false;
+  currentStep = 0;
+  totalTokens = 0;
+  totalPct    = 0;
+  topOffset   = 0;
+
+  // clear segments
+  const track = document.getElementById('ctx-bar-track');
+  track.querySelectorAll('.ctx-segment').forEach(s => s.remove());
+  document.getElementById('ctx-available').style.height = '100%';
+
+  // reset stats
+  updateStats(0, 0);
+
+  // clear feed
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px;text-align:center;opacity:0.5">Appuie sur <strong>▶ Simuler</strong> pour démarrer</div>';
+
+  document.getElementById('btn-play').textContent = '▶ Simuler une session';
+  document.getElementById('btn-play').classList.remove('running');
+}
+
+function setSpeed(s) {
+  speed = s;
+  document.querySelectorAll('.speed-toggle button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sp-' + (s === 'normal' ? 'norm' : s === 'slow' ? 'slow' : 'fast')).classList.add('active');
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+buildRuler();
+updateStats(0, 0);
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+    
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

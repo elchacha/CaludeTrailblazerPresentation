@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Agent</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/agent-explainer.css">
+</head>
+<body>
+
+<h1>🤖 Agent</h1>
+<p class="subtitle">L'agent travaille dans son propre contexte — seul le résultat revient à Claude</p>
+
+<div class="layout">
+
+  <!-- ══ GAUCHE : contexte Claude principal ══ -->
+  <div class="panel" id="main-panel">
+    <div class="panel-header main-ctx">
+      <span class="dot blue"></span>
+      Contexte Claude (principal)
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill blue" id="main-fill" style="width:3%"></div></div>
+      <span class="ctx-tokens blue" id="main-tokens">~3 000 tok</span><span id="main-delta" style="display:none"></span>
+    </div>
+    <div class="messages" id="main-messages">
+      <div class="msg user show">
+        <div class="msg-role">Vous</div>
+        Analyse la nouvelle et identifie tous les chapitres où Victor apparaît sans mentionner son prêt à Elise.
+      </div>
+      <div class="msg claude show">
+        <div class="msg-role">Claude</div>
+        Je délègue cette analyse à un <span class="hi">agent spécialisé</span>. Il va explorer tous les chapitres et me remonter uniquement le résultat.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CENTRE ══ -->
+  <div class="center-col">
+    <button class="agent-btn" id="agent-btn" onclick="launchAgent()">🤖 Agent</button>
+    <div class="spinner" id="spinner"></div>
+    <span class="center-label" id="center-label">lancer l'agent</span>
+    <div class="result-badge" id="result-badge">✓ terminé</div>
+    <button class="examples-btn" onclick="openExamples()">💡 Exemples</button>
+  </div>
+
+  <!-- ══ DROITE : contexte agent ══ -->
+  <div class="panel">
+    <div class="panel-header agent-ctx">
+      <span class="dot teal"></span>
+      Contexte Agent (isolé)
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill teal" id="agent-fill" style="width:0%"></div></div>
+      <span class="ctx-tokens teal" id="agent-tokens">— en attente —</span>
+    </div>
+    <div class="agent-status" id="agent-status">
+      <span style="color:var(--text-muted)">Agent non démarré</span>
+    </div>
+    <div class="messages" id="agent-messages">
+    </div>
+  </div>
+
+</div>
+
+<!-- Note isolation -->
+<div class="isolation-note">
+  <span class="icon">🔒</span>
+  <div>
+    <strong>Contexte isolé :</strong> L'agent possède sa propre fenêtre de contexte, indépendante de Claude.
+    Il peut lire tous les chapitres, accumuler des milliers de tokens d'analyse — <strong>tout cela ne revient pas</strong> dans le contexte principal.
+    Claude reçoit uniquement la <strong>synthèse finale</strong>, ce qui préserve sa fenêtre de contexte pour la suite de la conversation.
+  </div>
+</div>
+
+<!-- ══ MODAL EXEMPLES ══ -->
+<div class="modal-overlay" id="examples-overlay" onclick="closeExamplesOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">💡 Use cases — Agent par profil</span>
+      <button class="modal-close" onclick="closeExamples()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Tabs -->
+      <div class="profile-tabs">
+        <div class="ptab active admin" onclick="showProfile('admin')">📚 Libraire</div>
+        <div class="ptab dev"          onclick="showProfile('dev')"  >📰 Journaliste</div>
+        <div class="ptab archi"        onclick="showProfile('archi')">🏗 Architecte</div>
+      </div>
+
+      <!-- ── Libraire ── -->
+      <div class="usecase active" id="uc-admin">
+        <div class="uc-header admin">
+          <span class="uc-avatar">📚</span>
+          <div>
+            <div class="uc-title">Elise Moreau — Libraire</div>
+            <div class="uc-sub">Cohérence du personnage de Victor à travers les chapitres</div>
+          </div>
+        </div>
+        <div class="uc-prompt admin">
+          <div class="uc-prompt-label">Demande utilisateur</div>
+          "Vérifie que Victor est décrit de façon cohérente dans tous les chapitres — âge, habitudes, ton, et sans mention de son prêt à Elise."
+        </div>
+        <div class="uc-steps">
+          <div class="uc-step"><span class="step-icon">🔍</span><div class="step-txt"><strong>Glob</strong> — Scan de tous les fichiers <code>chapitre-*.md</code></div></div>
+          <div class="uc-step"><span class="step-icon">📖</span><div class="step-txt"><strong>Read ×4</strong> — Lecture de chaque chapitre, extraction des scènes avec Victor</div></div>
+          <div class="uc-step"><span class="step-icon">🔍</span><div class="step-txt"><strong>Grep</strong> — Pattern <code>Victor</code> + contexte ±5 lignes dans chaque fichier</div></div>
+          <div class="uc-step"><span class="step-icon">💭</span><div class="step-txt"><strong>Synthèse</strong> — Consolidation des 4 chapitres, matrice cohérence personnage</div></div>
+        </div>
+        <div class="uc-result">
+          <div class="uc-result-label">✅ Résultat renvoyé à Claude (~600 tok)</div>
+          Victor cohérent sur ch.1, ch.3, ch.4. Légère incohérence ch.3 : "habitué du jeudi" vs "du mardi" ailleurs. Aucune mention du prêt dans l'ensemble de la nouvelle.
+        </div>
+      </div>
+
+      <!-- ── Journaliste ── -->
+      <div class="usecase" id="uc-dev">
+        <div class="uc-header dev">
+          <span class="uc-avatar">📰</span>
+          <div>
+            <div class="uc-title">Nadia Kaci — Journaliste</div>
+            <div class="uc-sub">Vérification factuelle d'un brouillon d'article</div>
+          </div>
+        </div>
+        <div class="uc-prompt dev">
+          <div class="uc-prompt-label">Demande utilisateur</div>
+          "Trouve toutes les dates et chiffres dans brouillon-article.md et vérifie leur cohérence interne — pas d'anachronismes, pas de contradictions."
+        </div>
+        <div class="uc-steps">
+          <div class="uc-step"><span class="step-icon">📖</span><div class="step-txt"><strong>Read</strong> — <code>brouillon-article.md</code>, 280 lignes chargées</div></div>
+          <div class="uc-step"><span class="step-icon">🔍</span><div class="step-txt"><strong>Grep</strong> — Pattern <code>[0-9]{4}</code> (années) et chiffres clés dans le brouillon</div></div>
+          <div class="uc-step"><span class="step-icon">🔍</span><div class="step-txt"><strong>Grep multiline</strong> — Dates contradictoires ou anachroniques entre paragraphes</div></div>
+          <div class="uc-step"><span class="step-icon">💭</span><div class="step-txt"><strong>Raisonnement</strong> — Vérification cohérence chronologique et numérique</div></div>
+        </div>
+        <div class="uc-result">
+          <div class="uc-result-label">✅ Résultat renvoyé à Claude (~500 tok)</div>
+          2 incohérences : "fermé depuis 1987" (l.34) vs "ouverte en 1991" (l.78). "12 employés" (l.45) vs "7 salariés" (l.102). Corrections proposées.
+        </div>
+      </div>
+
+      <!-- ── Architecte ── -->
+      <div class="usecase" id="uc-archi">
+        <div class="uc-header archi">
+          <span class="uc-avatar">🏗</span>
+          <div>
+            <div class="uc-title">Tom Berger — Architecte</div>
+            <div class="uc-sub">Cartographie des références croisées entre documents</div>
+          </div>
+        </div>
+        <div class="uc-prompt archi">
+          <div class="uc-prompt-label">Demande utilisateur</div>
+          "Cartographie toutes les références croisées entre devis-renovation.md, plan-financement.md et les descriptions dans la nouvelle."
+        </div>
+        <div class="uc-steps">
+          <div class="uc-step"><span class="step-icon">📖</span><div class="step-txt"><strong>Read ×3</strong> — Lecture des 3 fichiers : devis, financement, et chapitre-2.md</div></div>
+          <div class="uc-step"><span class="step-icon">🔍</span><div class="step-txt"><strong>Grep croisé</strong> — Références à des montants, dates, dimensions entre fichiers</div></div>
+          <div class="uc-step"><span class="step-icon">💭</span><div class="step-txt"><strong>Synthèse</strong> — Construction du graphe de références, détection des incohérences</div></div>
+        </div>
+        <div class="uc-result">
+          <div class="uc-result-label">✅ Résultat renvoyé à Claude (~700 tok)</div>
+          3 incohérences : écart de 15k€ entre devis et financement. Chapitre-2 réfère un "bureau blanc" absent des plans. 1 doc orphelin identifié.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const agentSteps = [
+    {
+      delay: 0,
+      status: 'Initialisation…',
+      agentTok: '~1 500 tok', agentPct: 2, agentColor: 'teal',
+      msg: { type: 'tool', role: '⚙ Tool — Glob', text: 'Glob › <span class="code">chapitre-*.md</span> — recherche de tous les chapitres' }
+    },
+    {
+      delay: 1100,
+      status: 'Scan des fichiers…',
+      agentTok: '~4 200 tok', agentPct: 8, agentColor: 'teal',
+      msg: { type: 'search', role: '📂 Résultat Glob', text: '4 fichiers trouvés : <span class="code">chapitre-1.md</span> → <span class="code">chapitre-4.md</span>' }
+    },
+    {
+      delay: 2300,
+      status: 'Lecture des chapitres…',
+      agentTok: '~11 800 tok', agentPct: 20, agentColor: 'teal',
+      msg: { type: 'read', role: '📖 Read — chapitre-1.md', text: 'Lecture › 180 lignes — Victor présent scène 2, <span class="code">prêt</span> <span style="color:#f47174">non mentionné</span>' }
+    },
+    {
+      delay: 3400,
+      status: 'Lecture des chapitres…',
+      agentTok: '~19 600 tok', agentPct: 34, agentColor: 'teal',
+      msg: { type: 'read', role: '📖 Read — chapitre-2.md + chapitre-3.md', text: 'Lecture croisée — ch.2 : Tom/Nadia, Victor absent. Ch.3 : Victor scène 3, <span class="code">prêt</span> <span style="color:#f47174">absent</span>' }
+    },
+    {
+      delay: 4500,
+      status: 'Grep en cours…',
+      agentTok: '~26 400 tok', agentPct: 46, agentColor: 'teal',
+      msg: { type: 'search', role: '🔍 Grep — prêt|emprunt|somme', text: 'Grep › pattern <span class="code">prêt|emprunt|somme</span> dans 4 chapitres — <span class="hi-green">0 matches</span> — cohérence validée' }
+    },
+    {
+      delay: 5700,
+      status: 'Lecture chapitre-4…',
+      agentTok: '~34 800 tok', agentPct: 60, agentColor: 'orange',
+      msg: { type: 'read', role: '📖 Read — chapitre-4.md', text: 'Lecture › 210 lignes — scène finale, Victor révèle. Mot "accord" présent, "prêt" <span style="color:#f47174">toujours absent</span>. Cohérent.' }
+    },
+    {
+      delay: 6800,
+      status: 'Synthèse…',
+      agentTok: '~41 200 tok', agentPct: 71, agentColor: 'orange',
+      msg: { type: 'think', role: '💭 Raisonnement', text: 'Analyse complète. 3 chapitres avec Victor (ch.1, ch.3, ch.4). 0 mention du prêt dans l\'ensemble. Cohérence narrative vérifiée.' }
+    },
+    {
+      delay: 8000,
+      status: '✓ Agent terminé',
+      agentTok: '~44 100 tok', agentPct: 76, agentColor: 'orange',
+      msg: { type: 'summary', role: '✅ Résultat agent', text: '<span class="hi-green">Analyse terminée.</span> Victor présent dans 3 chapitres : <span class="code">chapitre-1</span> (sc.2), <span class="code">chapitre-3</span> (sc.3), <span class="code">chapitre-4</span> (finale). <span class="hi-green">0 mention du prêt.</span> Cohérence narrative validée.' },
+      final: true
+    },
+  ];
+
+  function openExamples() { document.getElementById('examples-overlay').classList.add('open'); }
+  function closeExamples() { document.getElementById('examples-overlay').classList.remove('open'); }
+  function closeExamplesOutside(e) { if (e.target === document.getElementById('examples-overlay')) closeExamples(); }
+
+  function showProfile(profile) {
+    document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.usecase').forEach(u => u.classList.remove('active'));
+    document.querySelector(`.ptab.${profile}`).classList.add('active');
+    document.getElementById(`uc-${profile}`).classList.add('active');
+  }
+
+  function launchAgent() {
+    document.getElementById('agent-btn').disabled = true;
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('center-label').style.display = 'none';
+
+    agentSteps.forEach((step, i) => {
+      setTimeout(() => {
+        // Status bar
+        const statusEl = document.getElementById('agent-status');
+        if (step.final) {
+          statusEl.innerHTML = `<span class="hi-green">✓ Agent terminé</span>`;
+        } else {
+          statusEl.innerHTML = `<span class="blinking"></span> ${step.status}`;
+        }
+
+        // Agent context bar
+        document.getElementById('agent-tokens').textContent = step.agentTok;
+        document.getElementById('agent-tokens').className = `ctx-tokens ${step.agentColor}`;
+        const fill = document.getElementById('agent-fill');
+        fill.style.width = step.agentPct + '%';
+        fill.className = `ctx-fill ${step.agentColor}`;
+
+        // Add agent message
+        const msgs = document.getElementById('agent-messages');
+        const div = document.createElement('div');
+        div.className = `msg ${step.msg.type}`;
+        div.innerHTML = `<div class="msg-role">${step.msg.role}</div>${step.msg.text}`;
+        msgs.appendChild(div);
+        setTimeout(() => div.classList.add('show'), 30);
+
+        // Scroll agent panel
+        msgs.scrollTop = msgs.scrollHeight;
+
+        // Final step
+        if (step.final) {
+          document.getElementById('spinner').style.display = 'none';
+          document.getElementById('result-badge').style.display = 'block';
+
+          // Add single result line to main context — with visual impact
+          setTimeout(() => {
+            // 1. Animate the bar width
+            const mainFill = document.getElementById('main-fill');
+            mainFill.style.width = '8%';
+
+            // 2. Flash the panel border
+            const mainPanel = document.getElementById('main-panel');
+            mainPanel.classList.add('panel-incoming');
+            setTimeout(() => mainPanel.classList.remove('panel-incoming'), 1700);
+
+            // 3. Animate the token counter from 3000 → 4200
+            const tokEl = document.getElementById('main-tokens');
+            const start = 3000, end = 4200, duration = 600;
+            const startTime = performance.now();
+            function animateCount(now) {
+              const elapsed = now - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              const eased = 1 - Math.pow(1 - progress, 3);
+              const current = Math.round(start + (end - start) * eased);
+              tokEl.textContent = '~' + current.toLocaleString('fr-FR') + ' tok';
+              if (progress < 1) requestAnimationFrame(animateCount);
+              else {
+                tokEl.textContent = '~4 200 tok';
+                tokEl.classList.add('tok-pulse');
+                setTimeout(() => tokEl.classList.remove('tok-pulse'), 600);
+              }
+            }
+            requestAnimationFrame(animateCount);
+
+            // 4. Show +1 200 tok delta badge
+            const deltaEl = document.getElementById('main-delta');
+            deltaEl.style.display = 'inline-block';
+            deltaEl.className = 'tok-delta';
+            deltaEl.textContent = '+1 200 tok';
+            setTimeout(() => { deltaEl.style.display = 'none'; deltaEl.className = ''; }, 2500);
+
+            // 5. Add result message
+            const mainMsgs = document.getElementById('main-messages');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'msg result';
+            resultDiv.innerHTML = `<div class="msg-role">🤖 Résultat agent — <span style="color:var(--text-muted)">+1 200 tok seulement</span></div>
+              Victor présent dans 3 chapitres : <span class="code">ch.1</span> (sc.2), <span class="code">ch.3</span> (sc.3), <span class="code">ch.4</span> (finale). Aucune mention du prêt. Cohérence narrative validée.`;
+            mainMsgs.appendChild(resultDiv);
+            setTimeout(() => resultDiv.classList.add('show'), 30);
+
+            document.getElementById('main-tokens').className = 'ctx-tokens blue';
+          }, 600);
+        }
+      }, step.delay);
+    });
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

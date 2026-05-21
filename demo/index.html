@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Features</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --sidebar-w: 210px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 20px 16px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo { font-size: 22px; margin-bottom: 4px; }
+  .sidebar-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .sidebar-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .nav-section {
+    padding: 10px 10px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    margin: 1px 6px;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--text); background: var(--surface2); }
+  .nav-item .nav-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
+  .nav-item .nav-label { flex: 1; line-height: 1.3; }
+  .nav-item .nav-label small { display: block; font-size: 10px; color: var(--text-muted); font-weight: 400; margin-top: 1px; }
+  .nav-item.active.rewind  { border-color: #5a3a00; background: #1a1000; color: #f7a300; }
+  .nav-item.active.card-no { border-color: #3a2a5a; background: #1a1030; color: #bc8cff; }
+  .nav-item.active.skill   { border-color: #1a4a1a; background: #0d1a0d; color: #3fb950; }
+  .nav-item.active.agent   { border-color: #0a3a3a; background: #0a1a1a; color: #39d0d8; }
+  .nav-item.active.compact { border-color: #4a3a00; background: #1a1500; color: #e3b341; }
+  .nav-item.active.clear   { border-color: #4a1010; background: #1a0a0a; color: #da3633; }
+  .nav-item.active.hook    { border-color: #0a3a3a; background: #0a1a1a; color: #39d0d8; }
+  .nav-item.active.context { border-color: #1a2a4a; background: #0a1020; color: #58a6ff; }
+  .nav-item.active.bgagents { border-color: #0a3a3a; background: #0a1a1a; color: #39d0d8; }
+  .nav-item.active.skillclear { border-color: #1a3a1a; background: #0a1a0d; color: #3fb950; }
+  .nav-item.active.workflow-no  { border-color: #3a1010; background: #1a0a0a; color: #da3633; }
+  .nav-item.active.workflow-yes { border-color: #1a3a1a; background: #0a1a0a; color: #3fb950; }
+  .nav-item.active .nav-label small { color: inherit; opacity: 0.6; }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    margin: 1px 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 20px;
+  }
+  .theme-switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--surface2);
+    border: 1px solid var(--border);
+    transition: .4s;
+    border-radius: 20px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text-muted);
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #39d0d8;
+    border-color: #39d0d8;
+  }
+  input:checked + .slider:before {
+    transform: translateX(14px);
+    background-color: var(--surface);
+  }
+  .content {
+    flex: 1;
+    height: 100vh;
+    position: relative;
+  }
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  .welcome {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--bg);
+    color: var(--text-muted);
+  }
+  .welcome-icon { font-size: 48px; }
+  .welcome-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .welcome-sub { font-size: 13px; }
+</style>
+<script>
+  function navigate(el) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    const src = el.getAttribute('data-src');
+    const frame = document.getElementById('frame');
+    document.getElementById('welcome').style.display = 'none';
+    frame.style.display = 'block';
+    frame.src = src;
+  }
+
+  function toggleProjectorMode(enabled) {
+    sessionStorage.setItem('projectorMode', enabled);
+    const frame = document.getElementById('frame');
+    if (frame.contentWindow) {
+      frame.contentWindow.postMessage({ theme: enabled ? 'projector' : 'normal' }, '*');
+    }
+  }
+
+  function onFrameLoad() {
+    const frame = document.getElementById('frame');
+    const isProjector = sessionStorage.getItem('projectorMode') === 'true';
+    if (frame.contentWindow) {
+      frame.contentWindow.postMessage({ theme: isProjector ? 'projector' : 'normal' }, '*');
+    }
+  }
+</script>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖</div>
+    <div class="sidebar-title">Claude Code</div>
+    <div class="sidebar-sub">Features interactives</div>
+  </div>
+  <div class="nav-section">Architecture</div>
+  <a class="nav-item arch" data-src="architecture-claude-code.html" onclick="navigate(this)">
+    <span class="nav-icon">🏗️</span>
+    <span class="nav-label">Architecture<small>CLI · LLM · composants</small></span>
+  </a>
+  <a class="nav-item arch-anim" data-src="architecture-animee.html" onclick="navigate(this)">
+    <span class="nav-icon">▶️</span>
+    <span class="nav-label">Architecture animée<small>Pas à pas · clic pour avancer</small></span>
+  </a>
+  <div class="nav-section">Contexte</div>
+  <a class="nav-item context" data-src="context-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">🧠</span>
+    <span class="nav-label">Fenêtre de contexte<small>Comment elle se remplit</small></span>
+  </a>
+  <a class="nav-item rewind" data-src="rewind-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">⏪</span>
+    <span class="nav-label">Rewind<small>Revenir en arrière</small></span>
+  </a>
+  <a class="nav-item hook" data-src="hook-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">🪝</span>
+    <span class="nav-label">Hook<small>Intercepter le rewind</small></span>
+  </a>
+  <a class="nav-item compact" data-src="compact-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">⚡</span>
+    <span class="nav-label">/compact<small>Compresser l'historique</small></span>
+  </a>
+  <a class="nav-item clear" data-src="clear-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">🗑</span>
+    <span class="nav-label">/clear<small>Effacer le contexte</small></span>
+  </a>
+  <div class="nav-section" style="margin-top:6px;">Skills</div>
+  <a class="nav-item card-no" data-src="card-creation.html" onclick="navigate(this)">
+    <span class="nav-icon">🃏</span>
+    <span class="nav-label">Card Creation<small>Sans skill</small></span>
+  </a>
+  <a class="nav-item skill" data-src="skill-card.html" onclick="navigate(this)">
+    <span class="nav-icon">✨</span>
+    <span class="nav-label">Skill Card<small>Avec skill</small></span>
+  </a>
+  <a class="nav-item skillclear" data-src="skill-clear.html" onclick="navigate(this)">
+    <span class="nav-icon">✨🗑</span>
+    <span class="nav-label">Skill + /clear<small>Tokens session après session</small></span>
+  </a>
+  <div class="nav-section" style="margin-top:6px;">Workflow</div>
+  <a class="nav-item workflow-no" data-src="workflow-sans-automation.html" onclick="navigate(this)">
+    <span class="nav-icon">🚫</span>
+    <span class="nav-label">Sans automation<small>Dérive des tokens</small></span>
+  </a>
+  <a class="nav-item workflow-yes" data-src="workflow-avec-automation.html" onclick="navigate(this)">
+    <span class="nav-icon">⚡</span>
+    <span class="nav-label">Avec automation<small>Contexte maîtrisé</small></span>
+  </a>
+  <div class="nav-section" style="margin-top:6px;">Agents</div>
+  <a class="nav-item bgagents" data-src="background-agents-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">⚡</span>
+    <span class="nav-label">Agents background<small>Parallèle · /plan → exécution</small></span>
+  </a>
+  <a class="nav-item agent" data-src="agent-explainer.html" onclick="navigate(this)">
+    <span class="nav-icon">🤖</span>
+    <span class="nav-label">Agent<small>Contexte isolé</small></span>
+  </a>
+  <div class="sidebar-footer">
+    <div class="nav-section" style="padding-left: 0; padding-right: 0;">Affichage</div>
+    <div class="theme-switch-wrapper">
+      <label class="theme-switch">
+        <input type="checkbox" id="projector-toggle" onchange="toggleProjectorMode(this.checked)">
+        <span class="slider"></span>
+      </label>
+      <span class="nav-label">Projecteur</span>
+    </div>
+  </div>
+</div>
+<div class="content" id="content">
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">👈</div>
+    <div class="welcome-title">Sélectionne une feature</div>
+    <div class="welcome-sub">Utilise le panneau de gauche</div>
+  </div>
+  <iframe id="frame" style="display:none;" onload="onFrameLoad()"></iframe>
+</div>
+</body>
+</html>

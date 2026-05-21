@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — /compact</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/compact-explainer.css">
+</head>
+<body>
+
+<h1>⚡ /compact</h1>
+<p class="subtitle">Compresse l'historique en un résumé — avec ou sans instruction utilisateur</p>
+
+<!-- ══════════════════════════════════════
+     RANGÉE 1 — compact simple
+══════════════════════════════════════ -->
+<div class="row">
+
+  <!-- Gauche -->
+  <div class="panel">
+    <div class="panel-header before-simple">
+      <span class="dot blue"></span>
+      Contexte avant — compact simple
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill" style="background:var(--danger); width:81%"></div></div>
+      <span class="ctx-tokens" style="color:var(--danger)">~81 000 tok</span>
+    </div>
+    <div class="messages" id="before-simple">
+      <div class="msg user">
+        <div class="msg-role">Vous — message 1</div>
+        Rédige le chapitre 1 — Elise reçoit la lettre de résiliation du bail.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 2</div>
+        Je crée <code>chapitre-1.md</code> et développe la scène d'ouverture.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit + Write</div>
+        Write › <code>chapitre-1.md</code> &nbsp;|&nbsp; Edit › <code>nouvelle.md</code>
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 4</div>
+        Développe le personnage de Victor dans ce chapitre.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 5</div>
+        J'enrichis Victor : 40 ans de présence, ses habitudes, son lien affectif avec la librairie.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit</div>
+        Edit › <code>chapitre-1.md</code> — 160 lignes modifiées
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 7</div>
+        La scène de la lettre recommandée semble trop froide, enrichis-la.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 8</div>
+        Scène enrichie : l'atmosphère de la librairie ajoutée, la réaction d'Elise développée.
+      </div>
+    </div>
+  </div>
+
+  <!-- Centre -->
+  <div class="center-col">
+    <button class="compact-btn" id="btn-simple" onclick="doCompact('simple')">⚡ /compact</button>
+  </div>
+
+  <!-- Droite -->
+  <div class="panel">
+    <div class="panel-header after-simple">
+      <span class="dot gold"></span>
+      Résultat — compact simple
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill" id="fill-simple" style="background:var(--gold); width:0%"></div></div>
+      <span class="ctx-tokens" id="tok-simple" style="color:var(--text-muted)">— en attente —</span>
+    </div>
+    <div class="messages" id="after-simple">
+      <div class="empty-state" id="empty-simple">Le résumé apparaîtra ici…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Séparateur -->
+<div class="section-sep">compact avec instruction</div>
+
+<!-- ══════════════════════════════════════
+     RANGÉE 2 — compact avec instruction
+══════════════════════════════════════ -->
+<div class="row">
+
+  <!-- Gauche -->
+  <div class="panel">
+    <div class="panel-header before-instr">
+      <span class="dot blue"></span>
+      Contexte avant — compact + instruction
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill" style="background:var(--danger); width:81%"></div></div>
+      <span class="ctx-tokens" style="color:var(--danger)">~81 000 tok</span>
+    </div>
+    <div class="messages" id="before-instr">
+      <div class="msg user">
+        <div class="msg-role">Vous — message 1</div>
+        Rédige le chapitre 1 — Elise reçoit la lettre de résiliation du bail.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 2</div>
+        Je crée <code>chapitre-1.md</code> et développe la scène d'ouverture.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit + Write</div>
+        Write › <code>chapitre-1.md</code> &nbsp;|&nbsp; Edit › <code>nouvelle.md</code>
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 4</div>
+        Développe le personnage de Victor dans ce chapitre.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 5</div>
+        J'enrichis Victor : 40 ans de présence, ses habitudes, son lien affectif avec la librairie.
+      </div>
+      <div class="msg tool">
+        <div class="msg-role">⚙ Tool — Edit</div>
+        Edit › <code>chapitre-1.md</code> — 160 lignes modifiées
+      </div>
+      <div class="msg user">
+        <div class="msg-role">Vous — message 7</div>
+        La scène de la lettre recommandée semble trop froide, enrichis-la.
+      </div>
+      <div class="msg claude">
+        <div class="msg-role">Claude — message 8</div>
+        Scène enrichie : l'atmosphère de la librairie ajoutée, la réaction d'Elise développée.
+      </div>
+    </div>
+  </div>
+
+  <!-- Centre -->
+  <div class="center-col">
+    <div class="instr-area">
+      <div class="instr-label">Instruction</div>
+      <textarea class="instr-input" id="instr-input" placeholder="garde la liste des fichiers modifiés et le personnage Victor">garde la liste des fichiers modifiés et le personnage Victor</textarea>
+    </div>
+    <button class="compact-instr-btn" id="btn-instr" onclick="doCompact('targeted')">⚡ /compact<br>[instruction]</button>
+  </div>
+
+  <!-- Droite -->
+  <div class="panel">
+    <div class="panel-header after-instr">
+      <span class="dot green"></span>
+      Résultat — compact + instruction
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track"><div class="ctx-fill" id="fill-instr" style="background:var(--green); width:0%"></div></div>
+      <span class="ctx-tokens" id="tok-instr" style="color:var(--text-muted)">— en attente —</span>
+    </div>
+    <div class="messages" id="after-instr">
+      <div class="empty-state" id="empty-instr">Le résumé ciblé apparaîtra ici…</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <span class="icon">💡</span>
+  <div>
+    <strong>/compact simple</strong> — Claude génère un résumé automatique de tout l'historique. Pratique, mais générique.<br>
+    <strong>/compact [instruction]</strong> — Le résumé est orienté selon ta priorité. Ce que tu veux garder est <strong>mis en avant</strong> dans le résumé.
+  </div>
+</div>
+
+<script>
+  let done = { simple: false, targeted: false };
+
+  function doCompact(mode) {
+    if (done[mode]) return;
+    done[mode] = true;
+
+    const msgsSel = mode === 'simple' ? '#before-simple .msg' : '#before-instr .msg';
+    document.querySelectorAll(msgsSel).forEach((m, i) => {
+      setTimeout(() => m.classList.add('fade-out'), i * 60);
+    });
+
+    if (mode === 'simple') {
+      document.getElementById('btn-simple').disabled = true;
+      setTimeout(() => {
+        document.getElementById('empty-simple').style.display = 'none';
+        const fill = document.getElementById('fill-simple');
+        fill.style.width = '14%';
+        fill.style.background = 'var(--gold)';
+        const tokEl = document.getElementById('tok-simple');
+        tokEl.textContent = '~14 000 tok';
+        tokEl.style.color = 'var(--gold)';
+
+        const msgs = document.getElementById('after-simple');
+        const block = document.createElement('div');
+        block.className = 'summary-block auto';
+        block.innerHTML = `
+          <div class="summary-title">📋 Résumé automatique — /compact</div>
+          <div class="summary-item"><span class="bullet">▸</span><span><code>chapitre-1.md</code> rédigé : Elise découvre la lettre de résiliation du bail.</span></div>
+          <div class="summary-item"><span class="bullet">▸</span><span>Victor enrichi : 40 ans de présence, anecdotes, lien affectif à la librairie.</span></div>
+          <div class="summary-item"><span class="bullet">▸</span><span>Scène de la lettre enrichie : atmosphère, silence, réaction d'Elise développée.</span></div>
+          <div class="summary-item"><span class="bullet">▸</span><span>Prochaine étape : chapitre 2 — point de vue de Tom Berger.</span></div>`;
+        msgs.appendChild(block);
+        setTimeout(() => block.classList.add('show'), 40);
+      }, 700);
+
+    } else {
+      document.getElementById('btn-instr').disabled = true;
+      const instr = document.getElementById('instr-input').value || 'garde la liste des fichiers modifiés et le personnage Victor';
+
+      setTimeout(() => {
+        document.getElementById('empty-instr').style.display = 'none';
+        const fill = document.getElementById('fill-instr');
+        fill.style.width = '11%';
+        fill.style.background = 'var(--green)';
+        const tokEl = document.getElementById('tok-instr');
+        tokEl.textContent = '~11 000 tok';
+        tokEl.style.color = 'var(--green)';
+
+        const msgs = document.getElementById('after-instr');
+
+        const instrNote = document.createElement('div');
+        instrNote.className = 'summary-block instr-note';
+        instrNote.innerHTML = `<div class="summary-title">📝 Instruction utilisateur</div>
+          <em style="color:var(--text-muted); font-size:12px;">"${instr}"</em>`;
+        msgs.appendChild(instrNote);
+        setTimeout(() => instrNote.classList.add('show'), 40);
+
+        setTimeout(() => {
+          const block = document.createElement('div');
+          block.className = 'summary-block targeted';
+          block.innerHTML = `
+            <div class="summary-title">📋 Résumé ciblé — /compact [instruction]</div>
+            <div class="summary-item"><span class="bullet">▸</span><span>Victor enrichi. Scène de la lettre développée. Atmosphère librairie ajoutée.</span></div>
+            <div class="highlight-box">
+              <div class="hl-label">📁 Fichiers modifiés (conservé)</div>
+              <code>chapitre-1.md</code> (modifié, 160 lignes)<br>
+              <code>nouvelle.md</code> (structure mise à jour)
+            </div>
+            <div class="highlight-box" style="margin-top:8px; border-color:#1a3a2a; background:#030f08;">
+              <div class="hl-label" style="color:var(--green)">👤 Personnage Victor (conservé)</div>
+              Victor Haas, 40 ans de fidélité à la librairie.<br>Présent au chapitre 1 — secret du prêt non mentionné.
+            </div>`;
+          msgs.appendChild(block);
+          setTimeout(() => block.classList.add('show'), 40);
+        }, 500);
+      }, 700);
+    }
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+    
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

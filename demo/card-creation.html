@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Card Creation (sans skill)</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/card-creation.css">
+</head>
+<body>
+
+<h1>🃏 Card Creation</h1>
+<p class="subtitle">Création de carte sans skill — Claude improvise à chaque fois</p>
+<div class="badge-noskilll"><span>⚠ Sans skill</span></div>
+
+<!-- Context bar -->
+<div class="context-section">
+  <div class="context-header">
+    <span class="context-label">Contexte Claude</span>
+    <span class="context-tokens" id="ctx-tokens">~2 000 tokens</span>
+  </div>
+  <div class="context-track">
+    <div class="context-fill" id="ctx-fill" style="width: 2%"></div>
+  </div>
+  <div class="context-log" id="ctx-log">
+    <div class="log-entry visible">
+      <span class="action">session start</span> — <span class="tok">+2 000 tok</span> — instructions système chargées
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="left-panel">
+    <div class="left-title">Action</div>
+    <button class="create-btn" id="create-btn" onclick="createCard()">🃏 Card Creation</button>
+    <div class="click-counter">Clics : <span id="click-count">0</span> / 3</div>
+    <div class="warning-note" id="warn-note">
+      Claude a dû réinterpréter la mise en page à chaque appel. Le contexte grossit vite sans pattern réutilisable.
+    </div>
+  </div>
+
+  <div class="right-panel" id="right-panel">
+    <div class="empty-state" id="empty-state">Les cartes apparaîtront ici…</div>
+  </div>
+</div>
+
+<script>
+  let clickCount = 0;
+
+  const tokenSteps = [
+    { add: 9500,  total: '~11 500 tokens', pct: 20, action: 'generate card layout', detail: 'Claude analyse la demande, choisit un design, génère le HTML from scratch' },
+    { add: 12000, total: '~23 500 tokens', pct: 42, action: 'generate card layout (again)', detail: 'Claude re-réfléchit au design, produit un nouveau pattern différent' },
+    { add: 15000, total: '~38 500 tokens', pct: 68, action: 'generate card layout (again…)', detail: 'Troisième interprétation, contexte très chargé, risque de dérive' },
+  ];
+
+  const cards = [
+    // Card 1
+    `<div class="card-1">
+      <div class="card-header">📚 Fiche Contact</div>
+      <div class="card-body">
+        <div class="field"><div class="field-label">Nom</div><div class="field-value">Moreau</div></div>
+        <div class="field"><div class="field-label">Prénom</div><div class="field-value">Elise</div></div>
+        <div class="field"><div class="field-label">Téléphone</div><div class="field-value">+33 6 14 22 38 51</div></div>
+        <div class="field"><div class="field-label">Adresse</div><div class="field-value">12 rue du Vieux-Marché, 76000 Rouen</div></div>
+      </div>
+    </div>`,
+    // Card 2
+    `<div class="card-2">
+      <div class="card-header">🏗 Berger — Tom</div>
+      <div class="card-body">
+        <div class="field"><div class="field-label">Nom</div><div class="field-value">Berger</div></div>
+        <div class="field"><div class="field-label">Prénom</div><div class="field-value">Tom</div></div>
+        <div class="field"><div class="field-label">Téléphone</div><div class="field-value">+33 7 82 17 63 44</div></div>
+        <div class="field"><div class="field-label">Adresse</div><div class="field-value">3 pl. de la République, 75011 Paris</div></div>
+      </div>
+    </div>`,
+    // Card 3
+    `<div class="card-3">
+      <div class="card-accent"></div>
+      <div class="card-inner">
+        <div class="card-header">📰 Kaci · Nadia</div>
+        <div class="card-body">
+          <div class="field"><div class="field-label">Nom</div><div class="field-value">Kaci</div></div>
+          <div class="field"><div class="field-label">Prénom</div><div class="field-value">Nadia</div></div>
+          <div class="sep"></div>
+          <div class="field"><div class="field-label">Tél.</div><div class="field-value">+33 6 91 04 57 28</div></div>
+          <div class="field"><div class="field-label">Adresse</div><div class="field-value">8 rue des Écrivains, 69001 Lyon</div></div>
+        </div>
+      </div>
+    </div>`,
+  ];
+
+  function createCard() {
+    if (clickCount >= 3) return;
+
+    const step = tokenSteps[clickCount];
+    clickCount++;
+
+    // Hide empty state
+    document.getElementById('empty-state').style.display = 'none';
+
+    // Add card
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.innerHTML = cards[clickCount - 1];
+
+    const note = document.createElement('div');
+    note.className = 'card-number';
+    note.textContent = `Carte #${clickCount} — design différent des précédentes`;
+    wrap.appendChild(note);
+
+    document.getElementById('right-panel').appendChild(wrap);
+    setTimeout(() => wrap.classList.add('show'), 30);
+
+    // Update context
+    document.getElementById('ctx-tokens').textContent = step.total;
+    const pct = step.pct;
+    const fill = document.getElementById('ctx-fill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct > 60 ? '#da3633' : pct > 35 ? '#f7a300' : '#58a6ff';
+    if (pct > 60) document.getElementById('ctx-tokens').classList.add('warning');
+
+    // Add log entry
+    const log = document.getElementById('ctx-log');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="action">${step.action}</span> — <span class="tok">+${step.add.toLocaleString('fr')} tok</span> — ${step.detail}`;
+    log.appendChild(entry);
+    setTimeout(() => entry.classList.add('visible'), 50);
+
+    // Update counter
+    document.getElementById('click-count').textContent = clickCount;
+
+    if (clickCount >= 3) {
+      document.getElementById('create-btn').disabled = true;
+      document.getElementById('warn-note').classList.add('show');
+    }
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+    
+    if (newHref !== currentHref) {
+      stylesheet.setAttribute('href', newHref);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) {
+      setTheme(event.data.theme);
+    }
+  });
+
+  // On load, check the parent's session storage for the theme
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    // Also check the toggle in the parent
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) {
+      toggle.checked = isProjector;
+    }
+  });
+</script>
+</body>
+</html>

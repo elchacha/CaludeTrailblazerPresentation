@@ -1,0 +1,10 @@
+documentation exhaustive des feature de claude :
+https://roadmap.sh/claude-code
+
+
+claude.md général (à affiner en fonction des besoins)
+https://gist.github.com/hqman/e29cb6386c539d795767e8c3fd2c959b
+
+
+comment utiliser Claude Code sans Claude LLM
+https://github.com/musistudio/claude-code-router

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Skill + /clear</title>
+<link id="theme-stylesheet" rel="stylesheet" href="css/skill-clear.css">
+</head>
+<body>
+
+<h1>✨ Skill + 🗑 /clear</h1>
+<p class="subtitle">Comparer : skill seul (contexte qui s'accumule) vs skill + /clear entre chaque itération (contexte toujours frais)</p>
+<div class="badges">
+  <span class="badge badge-skill">✅ Avec skill</span>
+  <span class="badge badge-clear">🗑 + /clear</span>
+</div>
+
+<div class="layout">
+
+  <!-- ══ SESSION 1 ══ -->
+  <div class="panel" id="panel-left">
+    <div class="panel-header session1">
+      <span class="dot blue"></span>
+      Sans /clear — contexte s'accumule
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track">
+        <div class="ctx-fill" id="ctx-fill-left" style="background:var(--green); width:2%"></div>
+      </div>
+      <span class="ctx-tokens" id="ctx-tokens-left" style="color:var(--green)">~2 000 tok</span>
+    </div>
+    <div class="panel-body">
+      <button class="create-btn" id="btn-group1" onclick="stepLeft()">→ Carte 1 / 3</button>
+      <div class="log-entries" id="log-left"></div>
+      <div class="cards-col" id="cards-left"></div>
+      <div class="cleared-badge" id="cleared-badge">🗑 Effacé par /clear</div>
+    </div>
+  </div>
+
+  <!-- ══ CENTER ══ -->
+  <div class="center-col">
+    <button class="clear-btn" id="clear-btn" disabled onclick="doClear()">🗑 /clear</button>
+    <span class="center-label" id="center-label">réinitialiser</span>
+  </div>
+
+  <!-- ══ SESSION 2 ══ -->
+  <div class="panel locked" id="panel-right">
+    <div class="panel-header session2">
+      <span class="dot green"></span>
+      Skill + /clear à chaque itération
+    </div>
+    <div class="ctx-bar">
+      <span>Tokens :</span>
+      <div class="ctx-track">
+        <div class="ctx-fill" id="ctx-fill-right" style="background:var(--green); width:0%"></div>
+      </div>
+      <span class="ctx-tokens" id="ctx-tokens-right" style="color:var(--text-muted)">— attend /clear —</span>
+    </div>
+    <div class="panel-body">
+      <div class="claudemd-note" id="claudemd-note">
+        <div class="rl-title">↩ Rechargé automatiquement après chaque /clear</div>
+        <code>CLAUDE.md</code> + skill réinjectés — conventions toujours présentes.<br>
+        Contexte de départ : <strong style="color:var(--green)">~4 500 tok</strong> à chaque fois.
+      </div>
+      <button class="create-btn" id="btn-group2" disabled onclick="stepRight()">→ Carte 1 / 3</button>
+      <div class="log-entries" id="log-right"></div>
+      <div class="cards-col" id="cards-right"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Savings bar — revealed at the end -->
+<div class="savings-bar" id="savings-bar">
+  <div class="sav-block">
+    <div class="sav-label">Sans /clear — pic final</div>
+    <div class="sav-value red">~92 000 tok</div>
+    <div class="sav-sub">accumulation irréversible · context overflow à terme</div>
+  </div>
+  <div class="sav-divider">→</div>
+  <div class="sav-block">
+    <div class="sav-label">Avec /clear — pic par itération</div>
+    <div class="sav-value green">~34 500 tok max</div>
+    <div class="sav-sub">reset après chaque carte · contexte jamais > 34 500 tok</div>
+  </div>
+  <div class="sav-divider">=</div>
+  <div class="sav-block">
+    <div class="sav-label">Gain réel</div>
+    <div class="sav-value gold">−63% sur le pic</div>
+    <div class="sav-sub">skill garantit la cohérence · /clear garantit la fraîcheur</div>
+  </div>
+</div>
+
+<script>
+  const people = [
+    { n: 'Martin', p: 'Sophie', t: '+33 6 12 34 56 78', a: '12 rue des Lilas, 75011' },
+    { n: 'Dupont', p: 'Jean',   t: '+33 7 98 76 54 32', a: '5 av. Victor Hugo, 69002' },
+    { n: 'Leroy',  p: 'Marie',  t: '+33 6 55 44 33 22', a: '8 pl. Gambetta, 33000' },
+  ];
+
+  // Left: no /clear, context keeps growing
+  const leftSteps = [
+    { tok: '~32 000 tok', pct: 16, add: '+30 000', detail: 'skill invoqué · historique rechargé' },
+    { tok: '~62 000 tok', pct: 31, add: '+30 000', detail: 'contexte s\'alourdit — sans filet' },
+    { tok: '~92 000 tok', pct: 46, add: '+30 000', detail: 'pic · accumulation irréversible' },
+  ];
+
+  // Right: /clear after each card, always restarts from 4 500
+  const rightSteps = [
+    { tok: '~34 500 tok', pct: 17, add: '+30 000', detail: 'repart de 4 500 tok · /clear auto' },
+    { tok: '~34 500 tok', pct: 17, add: '+30 000', detail: 'repart à nouveau de 4 500 tok' },
+    { tok: '~34 500 tok', pct: 17, add: '+30 000', detail: 'pic identique · jamais plus haut ✓' },
+  ];
+
+  let leftIdx     = 0;
+  let rightIdx    = 0;
+  let rightBusy   = false;
+
+  function getCtxColor(pct) {
+    if (pct < 15) return 'var(--green)';
+    if (pct < 30) return 'var(--orange)';
+    return 'var(--danger)';
+  }
+
+  function makeCard(p, idx, group) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.innerHTML = `
+      <div class="skill-card">
+        <div class="card-header">
+          <div class="card-title">👤 Fiche Contact</div>
+          <span class="skill-tag">skill/card · G${group}·#${idx}</span>
+        </div>
+        <div class="card-body">
+          <div class="field"><div class="field-label">Nom</div><div class="field-value">${p.n}</div></div>
+          <div class="field"><div class="field-label">Prénom</div><div class="field-value">${p.p}</div></div>
+          <div class="field"><div class="field-label">Tél</div><div class="field-value">${p.t}</div></div>
+          <div class="field full"><div class="field-label">Adresse</div><div class="field-value">${p.a}</div></div>
+        </div>
+      </div>`;
+    return wrap;
+  }
+
+  function addLogEntry(containerId, step) {
+    const log   = document.getElementById(containerId);
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="act">/skill-card</span> — <span class="tok">${step.add} tok</span> <span class="cache-tag">❌ cache expiré</span> — ${step.detail}`;
+    log.appendChild(entry);
+    setTimeout(() => entry.classList.add('visible'), 40);
+  }
+
+  function addClearEntry(containerId) {
+    const log   = document.getElementById(containerId);
+    const entry = document.createElement('div');
+    entry.className = 'log-entry clear-entry';
+    entry.innerHTML = `<span class="act-clear">🗑 /clear</span> — <span class="tok-reset">contexte → 4 500 tok</span>`;
+    log.appendChild(entry);
+    setTimeout(() => entry.classList.add('visible'), 40);
+  }
+
+  function updateCtx(fillId, tokId, pct, tok, color) {
+    const fill  = document.getElementById(fillId);
+    const tokEl = document.getElementById(tokId);
+    fill.style.width      = pct + '%';
+    fill.style.background = color;
+    tokEl.textContent     = tok;
+    tokEl.style.color     = color;
+  }
+
+  // ── STEP LEFT (click-driven, no /clear) ──
+  function stepLeft() {
+    if (leftIdx >= people.length) return;
+    const i   = leftIdx++;
+    const btn = document.getElementById('btn-group1');
+
+    const card = makeCard(people[i], i + 1, 1);
+    document.getElementById('cards-left').appendChild(card);
+    setTimeout(() => card.classList.add('show'), 30);
+    addLogEntry('log-left', leftSteps[i]);
+    updateCtx('ctx-fill-left', 'ctx-tokens-left', leftSteps[i].pct, leftSteps[i].tok, getCtxColor(leftSteps[i].pct));
+
+    if (leftIdx < people.length) {
+      btn.textContent = `→ Carte ${leftIdx + 1} / 3`;
+    } else {
+      btn.disabled    = true;
+      btn.textContent = '✓ Groupe 1 terminé';
+      setTimeout(() => {
+        const cb = document.getElementById('clear-btn');
+        cb.disabled = false;
+        cb.classList.add('pulse');
+      }, 350);
+    }
+  }
+
+  // ── INITIAL /CLEAR (transition left → right) ──
+  function doClear() {
+    const btn = document.getElementById('clear-btn');
+    btn.disabled = true;
+    btn.classList.remove('pulse');
+    document.getElementById('center-label').textContent = 'effacement…';
+
+    setTimeout(() => {
+      updateCtx('ctx-fill-left', 'ctx-tokens-left', 0, '0 tok', 'var(--surface2)');
+      document.getElementById('ctx-tokens-left').style.color = 'var(--text-muted)';
+      document.getElementById('panel-left').style.opacity   = '0.4';
+      document.getElementById('cleared-badge').classList.add('show');
+    }, 200);
+
+    setTimeout(() => {
+      document.getElementById('center-label').textContent = '✓ effacé';
+      const panelRight = document.getElementById('panel-right');
+      panelRight.classList.remove('locked');
+      panelRight.classList.add('unlocked');
+      updateCtx('ctx-fill-right', 'ctx-tokens-right', 2, '~4 500 tok', 'var(--green)');
+      document.getElementById('claudemd-note').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('btn-group2').disabled = false;
+      }, 650);
+    }, 750);
+  }
+
+  // ── STEP RIGHT (click-driven, auto /clear after each card) ──
+  function stepRight() {
+    if (rightIdx >= people.length || rightBusy) return;
+    const i   = rightIdx++;
+    const btn = document.getElementById('btn-group2');
+    btn.disabled = true;
+    rightBusy    = true;
+
+    // Show card + context spike
+    const card = makeCard(people[i], i + 1, 2);
+    document.getElementById('cards-right').appendChild(card);
+    setTimeout(() => card.classList.add('show'), 30);
+    addLogEntry('log-right', rightSteps[i]);
+    updateCtx('ctx-fill-right', 'ctx-tokens-right', rightSteps[i].pct, rightSteps[i].tok, getCtxColor(rightSteps[i].pct));
+
+    // Auto /clear — context drops back
+    setTimeout(() => {
+      document.getElementById('center-label').textContent = '⟳ /clear…';
+    }, 700);
+
+    setTimeout(() => {
+      addClearEntry('log-right');
+      updateCtx('ctx-fill-right', 'ctx-tokens-right', 2, '~4 500 tok', 'var(--green)');
+      document.getElementById('center-label').textContent = '✓ effacé';
+      rightBusy = false;
+
+      if (rightIdx < people.length) {
+        btn.textContent = `→ Carte ${rightIdx + 1} / 3`;
+        btn.disabled    = false;
+      } else {
+        btn.textContent = '✓ Groupe 2 terminé';
+        setTimeout(() => document.getElementById('savings-bar').classList.add('show'), 700);
+      }
+    }, 1400);
+  }
+</script>
+<script>
+  function setTheme(theme) {
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (!stylesheet) return;
+    let currentHref = stylesheet.getAttribute('href');
+    let newHref;
+    if (theme === 'projector') {
+      newHref = currentHref.includes('-projector.css') ? currentHref : currentHref.replace('.css', '-projector.css');
+    } else {
+      newHref = currentHref.replace('-projector.css', '.css');
+    }
+    if (newHref !== currentHref) stylesheet.setAttribute('href', newHref);
+  }
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.theme) setTheme(event.data.theme);
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    const isProjector = window.parent.sessionStorage.getItem('projectorMode') === 'true';
+    setTheme(isProjector ? 'projector' : 'normal');
+    const toggle = window.parent.document.getElementById('projector-toggle');
+    if (toggle) toggle.checked = isProjector;
+  });
+</script>
+</body>
+</html>

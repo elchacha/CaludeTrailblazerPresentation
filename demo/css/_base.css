@@ -1,0 +1,78 @@
+/* Base CSS partagée pour toutes les démos de présentation.
+   Chaque démo inclut ce fichier + son propre CSS spécifique.
+   Import : <link rel="stylesheet" href="css/_base.css"> */
+
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --orange: #f7a300;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --danger: #da3633;
+  --purple: #bc8cff;
+  --teal: #39d0d8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 4px;
+  color: var(--teal);
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot.blue   { background: var(--blue); }
+.dot.teal   { background: var(--teal); }
+.dot.orange { background: var(--orange); }
+.dot.green  { background: var(--green); }
+.dot.purple { background: var(--purple); }
+
+.code, code {
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.hi { color: var(--orange); font-weight: 600; }
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* Projector override : sourced by <nom>-projector.css */
